@@ -175,17 +175,28 @@ FORMATTING RULES:
 - Avoid "all of the above" or "none of the above"
 - No obvious patterns (e.g., longest option is correct)
 
-RETURN FORMAT (JSON only, no markdown, no explanations):
+CRITICAL OUTPUT REQUIREMENTS:
+- You MUST respond with ONLY valid JSON
+- Do NOT include any markdown formatting (no ```json or ``` tags)
+- Do NOT include any explanatory text before or after the JSON
+- Do NOT include comments in the JSON
+- Start your response with [ and end with ]
+
+EXACT OUTPUT FORMAT:
 [
   {{
     "id": "q_{content_hash}_1",
     "question": "[Specific question referencing exact content details]",
     "options": ["[Correct answer with specific details from text]", "[Plausible wrong answer]", "[Another plausible wrong answer]", "[Third plausible wrong answer]"]
   }},
-  ... (continue for exactly {num_questions} questions)
+  {{
+    "id": "q_{content_hash}_2",
+    "question": "[Another specific question]",
+    "options": ["[Correct answer]", "[Wrong option 1]", "[Wrong option 2]", "[Wrong option 3]"]
+  }}
 ]
 
-GENERATE EXACTLY {num_questions} QUESTIONS NOW:"""
+GENERATE EXACTLY {num_questions} QUESTIONS NOW. RESPOND WITH ONLY THE JSON ARRAY:"""
     
     async def _call_deepseek_api(self, prompt: str) -> str:
         """Make API call to AI service (tries Ollama first, then NVIDIA, then DeepSeek)"""
@@ -237,7 +248,7 @@ GENERATE EXACTLY {num_questions} QUESTIONS NOW:"""
                 "messages": [
                     {
                         "role": "system",
-                        "content": "You are an expert educational assessment designer who creates high-quality, content-specific quiz questions."
+                        "content": "You are an expert educational assessment designer who creates high-quality, content-specific quiz questions. You MUST respond with ONLY valid JSON arrays. Do not include markdown formatting, explanations, or any text outside the JSON structure."
                     },
                     {
                         "role": "user", 
@@ -249,7 +260,8 @@ GENERATE EXACTLY {num_questions} QUESTIONS NOW:"""
                     "temperature": 0.7,
                     "top_p": 0.9,
                     "num_predict": 4096
-                }
+                },
+                "format": "json"
             }
             
             async with httpx.AsyncClient(timeout=300.0) as client:
