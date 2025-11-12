@@ -152,6 +152,54 @@ const EnhancedQuiz: React.FC = () => {
     try {
       let content = "";
 
+      // Handle URL input
+      if (inputMethod === "url" && urlInput.trim()) {
+        const formData = new FormData();
+        formData.append("url", urlInput);
+        if (topic) formData.append("topic", topic);
+        formData.append("num_questions", numQuestions.toString());
+
+        const response = await fetch(
+          "http://localhost:4000/quiz/v2/generate-from-url-fast",
+          {
+            method: "POST",
+            body: formData,
+          }
+        );
+
+        if (!response.ok) {
+          throw new Error(`URL processing failed: ${response.status}`);
+        }
+
+        const data = await response.json();
+        
+        if (data.success && data.questions) {
+          const quizData: QuizData = {
+            id: `quiz-${Date.now()}`,
+            questions: data.questions.map((q: any, index: number) => ({
+              id: q.id || `q${index + 1}`,
+              question: q.question,
+              options: q.options,
+              correctAnswer: q.correctAnswer || q.options[0],
+              explanation: q.explanation,
+              difficulty: q.difficulty || difficulty,
+            })),
+            topic: data.topic || topic || "URL Quiz",
+            difficulty: data.difficulty || difficulty,
+            metadata: data.metadata,
+          };
+
+          setGeneratedQuiz(quizData);
+          setActiveTab("take");
+          setCurrentQuestionIndex(0);
+          setUserAnswers({});
+          setQuizStartTime(Date.now());
+          return;
+        } else {
+          throw new Error("Invalid URL response format");
+        }
+      }
+
       if (inputMethod === "text") {
         content = textInput;
       } else if (selectedFile) {
@@ -280,44 +328,11 @@ const EnhancedQuiz: React.FC = () => {
 
   const downloadReport = () => {
     if (!quizResults || !generatedQuiz) return;
-
-    const reportContent = `
-QUIZ REPORT
-===========
-
-Topic: ${generatedQuiz.topic}
-Date: ${new Date().toLocaleDateString()}
-Time: ${new Date().toLocaleTimeString()}
-
-SCORE SUMMARY
--------------
-Score: ${quizResults.score}/${quizResults.totalQuestions}
-Percentage: ${quizResults.percentage}%
-Time Taken: ${formatTime(quizResults.timeSpent)}
-Average Time per Question: ${Math.round(quizResults.timeSpent / quizResults.totalQuestions)}s
-
-DETAILED RESULTS
-----------------
-${quizResults.detailedResults.map((result, index) => `
-Question ${index + 1}: ${result.isCorrect ? '✓ CORRECT' : '✗ INCORRECT'}
-Q: ${result.question}
-Your Answer: ${result.userAnswer}
-Correct Answer: ${result.correctAnswer}
-${result.explanation ? `Explanation: ${result.explanation}` : ''}
-`).join('\n---\n')}
-
-Performance: ${quizResults.percentage >= 80 ? 'Excellent!' : quizResults.percentage >= 60 ? 'Good!' : 'Needs Improvement'}
-`;
-
-    const blob = new Blob([reportContent], { type: 'text/plain' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `quiz-report-${generatedQuiz.topic.replace(/\s+/g, '-')}-${Date.now()}.txt`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
+    
+    // Dynamically import the PDF generator
+    import('../utils/pdfGenerator').then(({ generateQuizReportPDF }) => {
+      generateQuizReportPDF(quizResults, generatedQuiz);
+    });
   };
 
   const handleNextQuestion = () => {

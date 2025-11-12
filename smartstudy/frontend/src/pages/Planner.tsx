@@ -263,6 +263,15 @@ export default function Planner() {
     }
   }
 
+  const downloadStudyPlan = () => {
+    if (dayPlans.length === 0) return
+    
+    // Dynamically import the PDF generator
+    import('../utils/pdfGenerator').then(({ generateStudyPlanPDF }) => {
+      generateStudyPlanPDF(dayPlans, studyPlanInput, daysUntilExam, tasks);
+    });
+  }
+
   const toggleTaskCompletion = async (taskId: string) => {
     try {
       const task = tasks.find(t => t.id === taskId)
@@ -637,9 +646,20 @@ export default function Planner() {
                       {daysUntilExam > 0 ? `${daysUntilExam} days until your exam` : 'Exam day is here!'}
                     </p>
                   </div>
-                  <div className="text-right">
-                    <div className="text-4xl font-bold">{calculateOverallProgress()}%</div>
-                    <div className="text-indigo-200">Complete</div>
+                  <div className="flex items-center gap-4">
+                    <button
+                      onClick={downloadStudyPlan}
+                      className="px-6 py-3 bg-white/20 hover:bg-white/30 text-white rounded-xl font-semibold transition-all duration-200 flex items-center gap-2 backdrop-blur-sm"
+                    >
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                      </svg>
+                      Download Plan
+                    </button>
+                    <div className="text-right">
+                      <div className="text-4xl font-bold">{calculateOverallProgress()}%</div>
+                      <div className="text-indigo-200">Complete</div>
+                    </div>
                   </div>
                 </div>
                 
