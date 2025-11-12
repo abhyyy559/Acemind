@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from "react";
 import { ApiError } from "../services/api";
 import LoadingSpinner from "../components/LoadingSpinner";
 import ErrorMessage from "../components/ErrorMessage";
+import { MultiStepLoader } from "@/components/ui/multi-step-loader";
 
 interface Question {
   id: string;
@@ -70,6 +71,16 @@ const EnhancedQuiz: React.FC = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [dragActive, setDragActive] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Loading states for multi-step loader
+  const loadingStates = [
+    { text: "Analyzing your content..." },
+    { text: "Extracting key concepts..." },
+    { text: "Generating intelligent questions..." },
+    { text: "Creating answer options..." },
+    { text: "Validating question quality..." },
+    { text: "Finalizing your quiz..." },
+  ];
 
   // Timer effect
   useEffect(() => {

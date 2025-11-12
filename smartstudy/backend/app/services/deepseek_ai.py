@@ -248,7 +248,7 @@ GENERATE EXACTLY {num_questions} QUESTIONS NOW. RESPOND WITH ONLY THE JSON ARRAY
                 "messages": [
                     {
                         "role": "system",
-                        "content": "You are an expert educational assessment designer who creates high-quality, content-specific quiz questions. You MUST respond with ONLY valid JSON arrays. Do not include markdown formatting, explanations, or any text outside the JSON structure."
+                        "content": "You are an expert educational assessment designer who creates high-quality, content-specific quiz questions. You MUST respond with ONLY valid JSON arrays starting with [ and ending with ]. Do not include markdown formatting, code blocks, explanations, or any text outside the JSON array structure."
                     },
                     {
                         "role": "user", 
@@ -260,8 +260,8 @@ GENERATE EXACTLY {num_questions} QUESTIONS NOW. RESPOND WITH ONLY THE JSON ARRAY
                     "temperature": 0.7,
                     "top_p": 0.9,
                     "num_predict": 4096
-                },
-                "format": "json"
+                }
+                # Note: Removed "format": "json" as it causes Ollama to return single objects instead of arrays
             }
             
             async with httpx.AsyncClient(timeout=300.0) as client:
@@ -278,7 +278,7 @@ GENERATE EXACTLY {num_questions} QUESTIONS NOW. RESPOND WITH ONLY THE JSON ARRAY
                     content = data.get("message", {}).get("content", "")
                     if content and len(content.strip()) > 10:  # Ensure meaningful content
                         logger.info(f"Received Ollama response, length: {len(content)} characters")
-                        logger.debug(f"Ollama response preview: {content[:200]}...")
+                        logger.info(f"Ollama response FULL: {content}")  # Log full response for debugging
                         return content
                     else:
                         logger.warning(f"Ollama returned empty or too short response: '{content}'")
@@ -410,41 +410,114 @@ GENERATE EXACTLY {num_questions} QUESTIONS NOW. RESPOND WITH ONLY THE JSON ARRAY
             
             # Log the raw response for debugging
             logger.info(f"Parsing response, length: {len(response_clean)} characters")
-            logger.debug(f"Response preview: {response_clean[:300]}...")
+            logger.info(f"Response preview: {response_clean[:500]}...")
             
             # Try multiple parsing strategies
             json_str = None
             
-            # Strategy 1: Look for JSON code block (```json ... ```)
-            code_block_match = re.search(r'```(?:json)?\s*(\[.*?\])\s*```', response_clean, re.DOTALL)
-            if code_block_match:
-                json_str = code_block_match.group(1)
-                logger.info("Found JSON in code block")
+            # Strategy 1: Direct JSON parse (if response is already valid JSON)
+            try:
+                test_parse = json.loads(response_clean)
+                if isinstance(test_parse, list):
+                    json_str = response_clean
+                    logger.info("Response is already valid JSON array")
+                elif isinstance(test_parse, dict):
+                    # Check if it's a single question object
+                    if "question" in test_parse and "options" in test_parse:
+                        json_str = f"[{response_clean}]"
+                        logger.info("Response is single question object, wrapped in array")
+                    else:
+                        # Might be a wrapper object, check for questions array inside
+                        if "questions" in test_parse and isinstance(test_parse["questions"], list):
+                            json_str = json.dumps(test_parse["questions"])
+                            logger.info("Found questions array inside wrapper object")
+                        else:
+                            json_str = f"[{response_clean}]"
+                            logger.info("Response is valid JSON object, wrapped in array")
+            except json.JSONDecodeError:
+                pass
             
-            # Strategy 2: Look for JSON array
+            # Strategy 2: Look for JSON code block (```json ... ```)
             if not json_str:
-                json_match = re.search(r'\[\s*\{.*?\}\s*\]', response_clean, re.DOTALL)
-                if json_match:
-                    json_str = json_match.group()
-                    logger.info("Found JSON array")
+                code_block_match = re.search(r'```(?:json)?\s*(\[.*?\])\s*```', response_clean, re.DOTALL)
+                if code_block_match:
+                    json_str = code_block_match.group(1)
+                    logger.info("Found JSON in code block")
             
-            # Strategy 3: Look for single JSON object and wrap it
+            # Strategy 3: Look for JSON array with proper nesting
             if not json_str:
-                json_match = re.search(r'\{[^{}]*"question"[^{}]*"options"[^{}]*\}', response_clean, re.DOTALL)
-                if json_match:
-                    json_str = f"[{json_match.group()}]"
-                    logger.info("Found single JSON object, wrapped in array")
+                # Find the first [ and last ] to extract the full array
+                first_bracket = response_clean.find('[')
+                last_bracket = response_clean.rfind(']')
+                if first_bracket != -1 and last_bracket != -1 and last_bracket > first_bracket:
+                    json_str = response_clean[first_bracket:last_bracket+1]
+                    logger.info("Found JSON array by bracket matching")
             
-            # Strategy 4: Try to extract multiple JSON objects
+            # Strategy 4: Look for single JSON object and wrap it
             if not json_str:
-                objects = re.findall(r'\{[^{}]*"question"[^{}]*"options"[^{}]*\}', response_clean, re.DOTALL)
+                # Use a more robust regex that handles nested braces
+                brace_count = 0
+                start_idx = -1
+                for i, char in enumerate(response_clean):
+                    if char == '{':
+                        if brace_count == 0:
+                            start_idx = i
+                        brace_count += 1
+                    elif char == '}':
+                        brace_count -= 1
+                        if brace_count == 0 and start_idx != -1:
+                            potential_json = response_clean[start_idx:i+1]
+                            if '"question"' in potential_json and '"options"' in potential_json:
+                                json_str = f"[{potential_json}]"
+                                logger.info("Found single JSON object with proper nesting, wrapped in array")
+                                break
+            
+            # Strategy 5: Try to extract multiple JSON objects
+            if not json_str:
+                objects = []
+                brace_count = 0
+                start_idx = -1
+                for i, char in enumerate(response_clean):
+                    if char == '{':
+                        if brace_count == 0:
+                            start_idx = i
+                        brace_count += 1
+                    elif char == '}':
+                        brace_count -= 1
+                        if brace_count == 0 and start_idx != -1:
+                            potential_json = response_clean[start_idx:i+1]
+                            if '"question"' in potential_json and '"options"' in potential_json:
+                                objects.append(potential_json)
+                            start_idx = -1
+                
                 if objects:
                     json_str = "[" + ",".join(objects) + "]"
-                    logger.info(f"Found {len(objects)} JSON objects, combined into array")
+                    logger.info(f"Found {len(objects)} JSON objects with proper nesting, combined into array")
+            
+            # Strategy 6: Try to clean and extract JSON more aggressively
+            if not json_str:
+                # Remove common non-JSON prefixes/suffixes
+                cleaned = response_clean
+                # Remove markdown code blocks
+                cleaned = re.sub(r'```[a-z]*\n?', '', cleaned)
+                cleaned = re.sub(r'```', '', cleaned)
+                # Remove common text before JSON
+                cleaned = re.sub(r'^.*?(?=\[|\{)', '', cleaned, flags=re.DOTALL)
+                # Remove common text after JSON
+                cleaned = re.sub(r'(\]|\})(?!.*(\]|\})).*$', r'\1', cleaned, flags=re.DOTALL)
+                
+                # Try parsing the cleaned version
+                try:
+                    test_parse = json.loads(cleaned.strip())
+                    if isinstance(test_parse, (list, dict)):
+                        json_str = cleaned.strip()
+                        logger.info("Found JSON after aggressive cleaning")
+                except:
+                    pass
             
             if not json_str:
-                logger.warning("No JSON found in expected format")
-                logger.warning(f"Full response: {response_clean[:1000]}")
+                logger.error("No JSON found in expected format after all strategies")
+                logger.error(f"Full response: {response_clean}")
                 raise ValueError("No JSON found in response")
             
             # Clean up the JSON string
@@ -502,10 +575,12 @@ GENERATE EXACTLY {num_questions} QUESTIONS NOW. RESPOND WITH ONLY THE JSON ARRAY
         except json.JSONDecodeError as e:
             logger.error(f"JSON parsing error: {e}")
             logger.error(f"Response content: {response[:1000]}...")
+            logger.error("Returning empty list - fallback will be triggered")
             return []
         except Exception as e:
             logger.error(f"Error parsing quiz response: {e}")
             logger.error(f"Response content: {response[:500]}...")
+            logger.error("Returning empty list - fallback will be triggered")
             return []
     
     def _generate_fallback_questions(self, content: str, topic: Optional[str], num_questions: int = 5) -> List[QuizQuestion]:
