@@ -69,11 +69,11 @@ export default function Home() {
           { label: 'Average Score', value: '87%', icon: '📊', color: 'from-blue-400 to-indigo-500' },
           { label: 'Focus Time', value: '4.2h', icon: '⏱️', color: 'from-purple-400 to-pink-500' },
         ].map((stat, index) => (
-          <div key={index} className="bg-white/80 backdrop-blur-sm rounded-2xl p-6 shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1">
+          <div key={index} className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1 border border-gray-100 dark:border-gray-700">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-gray-600">{stat.label}</p>
-                <p className="text-3xl font-bold text-gray-900 mt-1">{stat.value}</p>
+                <p className="text-sm font-medium text-gray-600 dark:text-gray-400">{stat.label}</p>
+                <p className="text-3xl font-bold text-gray-900 dark:text-white mt-1">{stat.value}</p>
               </div>
               <div className={`w-14 h-14 bg-gradient-to-r ${stat.color} rounded-2xl flex items-center justify-center shadow-lg`}>
                 <span className="text-2xl">{stat.icon}</span>
@@ -86,7 +86,7 @@ export default function Home() {
       {/* Main Features Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
         {/* Study Planner */}
-        <div className="group bg-white/80 backdrop-blur-sm rounded-3xl p-8 shadow-lg hover:shadow-2xl transition-all duration-300 hover:-translate-y-2">
+        <div className="group bg-white dark:bg-gray-800 rounded-3xl p-8 shadow-lg hover:shadow-2xl transition-all duration-300 hover:-translate-y-2 border border-gray-100 dark:border-gray-700">
           <div className="flex items-center justify-between mb-6">
             <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-cyan-500 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform duration-300 shadow-lg">
               <span className="text-3xl">📅</span>
@@ -96,8 +96,8 @@ export default function Home() {
               <p className="text-lg font-semibold text-gray-900">2:30 PM</p>
             </div>
           </div>
-          <h3 className="text-2xl font-bold text-gray-900 mb-3">Study Planner</h3>
-          <p className="text-gray-600 mb-6 leading-relaxed">Organize your study schedule and track your progress with smart planning tools.</p>
+          <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-3">Study Planner</h3>
+          <p className="text-gray-600 dark:text-gray-300 mb-6 leading-relaxed">Organize your study schedule and track your progress with smart planning tools.</p>
           <Link 
             to="/planner"
             className="inline-flex items-center px-6 py-3 bg-gradient-to-r from-blue-500 to-cyan-500 text-white rounded-xl font-medium hover:from-blue-600 hover:to-cyan-600 transition-all duration-200 shadow-lg hover:shadow-xl group-hover:scale-105"
@@ -110,7 +110,7 @@ export default function Home() {
         </div>
 
         {/* AI Quiz Generator */}
-        <div className="group bg-white/80 backdrop-blur-sm rounded-3xl p-8 shadow-lg hover:shadow-2xl transition-all duration-300 hover:-translate-y-2">
+        <div className="group bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 rounded-3xl p-8 shadow-lg hover:shadow-2xl transition-all duration-300 hover:-translate-y-2">
           <div className="flex items-center justify-between mb-6">
             <div className="w-16 h-16 bg-gradient-to-br from-green-500 to-emerald-500 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform duration-300 shadow-lg">
               <span className="text-3xl">🧠</span>
@@ -120,8 +120,8 @@ export default function Home() {
               <p className="text-lg font-semibold text-gray-900">Smart Quiz</p>
             </div>
           </div>
-          <h3 className="text-2xl font-bold text-gray-900 mb-3">AI Quiz Generator</h3>
-          <p className="text-gray-600 mb-6 leading-relaxed">Generate personalized quizzes from your study materials using advanced AI technology.</p>
+          <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-3">AI Quiz Generator</h3>
+          <p className="text-gray-600 dark:text-gray-300 mb-6 leading-relaxed">Generate personalized quizzes from your study materials using advanced AI technology.</p>
           <Link 
             to="/quiz"
             className="inline-flex items-center px-6 py-3 bg-gradient-to-r from-green-500 to-emerald-500 text-white rounded-xl font-medium hover:from-green-600 hover:to-emerald-600 transition-all duration-200 shadow-lg hover:shadow-xl group-hover:scale-105"
@@ -134,7 +134,7 @@ export default function Home() {
         </div>
 
         {/* Focus Room */}
-        <div className="group bg-white/80 backdrop-blur-sm rounded-3xl p-8 shadow-lg hover:shadow-2xl transition-all duration-300 hover:-translate-y-2">
+        <div className="group bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 rounded-3xl p-8 shadow-lg hover:shadow-2xl transition-all duration-300 hover:-translate-y-2">
           <div className="flex items-center justify-between mb-6">
             <div className="w-16 h-16 bg-gradient-to-br from-purple-500 to-pink-500 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform duration-300 shadow-lg">
               <span className="text-3xl">🎯</span>
@@ -144,8 +144,8 @@ export default function Home() {
               <p className="text-lg font-semibold text-gray-900">3D Space</p>
             </div>
           </div>
-          <h3 className="text-2xl font-bold text-gray-900 mb-3">Focus Room</h3>
-          <p className="text-gray-600 mb-6 leading-relaxed">Enter an immersive 3D environment designed to enhance your concentration and focus.</p>
+          <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-3">Focus Room</h3>
+          <p className="text-gray-600 dark:text-gray-300 mb-6 leading-relaxed">Enter an immersive 3D environment designed to enhance your concentration and focus.</p>
           <Link 
             to="/focus"
             className="inline-flex items-center px-6 py-3 bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-xl font-medium hover:from-purple-600 hover:to-pink-600 transition-all duration-200 shadow-lg hover:shadow-xl group-hover:scale-105"
@@ -158,7 +158,7 @@ export default function Home() {
         </div>
 
         {/* Notes */}
-        <div className="group bg-white/80 backdrop-blur-sm rounded-3xl p-8 shadow-lg hover:shadow-2xl transition-all duration-300 hover:-translate-y-2">
+        <div className="group bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 rounded-3xl p-8 shadow-lg hover:shadow-2xl transition-all duration-300 hover:-translate-y-2">
           <div className="flex items-center justify-between mb-6">
             <div className="w-16 h-16 bg-gradient-to-br from-yellow-500 to-orange-500 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform duration-300 shadow-lg">
               <span className="text-3xl">📝</span>
@@ -168,8 +168,8 @@ export default function Home() {
               <p className="text-lg font-semibold text-gray-900">Recent</p>
             </div>
           </div>
-          <h3 className="text-2xl font-bold text-gray-900 mb-3">Smart Notes</h3>
-          <p className="text-gray-600 mb-6 leading-relaxed">Organize and search through your study notes with intelligent categorization.</p>
+          <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-3">Smart Notes</h3>
+          <p className="text-gray-600 dark:text-gray-300 mb-6 leading-relaxed">Organize and search through your study notes with intelligent categorization.</p>
           <Link 
             to="/notes"
             className="inline-flex items-center px-6 py-3 bg-gradient-to-r from-yellow-500 to-orange-500 text-white rounded-xl font-medium hover:from-yellow-600 hover:to-orange-600 transition-all duration-200 shadow-lg hover:shadow-xl group-hover:scale-105"
@@ -182,7 +182,7 @@ export default function Home() {
         </div>
 
         {/* Analytics */}
-        <div className="group bg-white/80 backdrop-blur-sm rounded-3xl p-8 shadow-lg hover:shadow-2xl transition-all duration-300 hover:-translate-y-2">
+        <div className="group bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 rounded-3xl p-8 shadow-lg hover:shadow-2xl transition-all duration-300 hover:-translate-y-2">
           <div className="flex items-center justify-between mb-6">
             <div className="w-16 h-16 bg-gradient-to-br from-indigo-500 to-blue-500 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform duration-300 shadow-lg">
               <span className="text-3xl">📊</span>
@@ -192,8 +192,8 @@ export default function Home() {
               <p className="text-lg font-semibold text-gray-900">+15%</p>
             </div>
           </div>
-          <h3 className="text-2xl font-bold text-gray-900 mb-3">Analytics</h3>
-          <p className="text-gray-600 mb-6 leading-relaxed">Track your learning progress with detailed analytics and performance insights.</p>
+          <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-3">Analytics</h3>
+          <p className="text-gray-600 dark:text-gray-300 mb-6 leading-relaxed">Track your learning progress with detailed analytics and performance insights.</p>
           <Link 
             to="/analytics"
             className="inline-flex items-center px-6 py-3 bg-gradient-to-r from-indigo-500 to-blue-500 text-white rounded-xl font-medium hover:from-indigo-600 hover:to-blue-600 transition-all duration-200 shadow-lg hover:shadow-xl group-hover:scale-105"
@@ -206,7 +206,7 @@ export default function Home() {
         </div>
 
         {/* Pomodoro Timer */}
-        <div className="group bg-white/80 backdrop-blur-sm rounded-3xl p-8 shadow-lg hover:shadow-2xl transition-all duration-300 hover:-translate-y-2">
+        <div className="group bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 rounded-3xl p-8 shadow-lg hover:shadow-2xl transition-all duration-300 hover:-translate-y-2">
           <div className="flex items-center justify-between mb-6">
             <div className="w-16 h-16 bg-gradient-to-br from-red-500 to-pink-500 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform duration-300 shadow-lg">
               <span className="text-3xl">⏰</span>
@@ -216,8 +216,8 @@ export default function Home() {
               <p className="text-lg font-semibold text-gray-900">25:00</p>
             </div>
           </div>
-          <h3 className="text-2xl font-bold text-gray-900 mb-3">Pomodoro Timer</h3>
-          <p className="text-gray-600 mb-6 leading-relaxed">Boost your productivity with focused study sessions using the Pomodoro technique.</p>
+          <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-3">Pomodoro Timer</h3>
+          <p className="text-gray-600 dark:text-gray-300 mb-6 leading-relaxed">Boost your productivity with focused study sessions using the Pomodoro technique.</p>
           <button className="inline-flex items-center px-6 py-3 bg-gradient-to-r from-red-500 to-pink-500 text-white rounded-xl font-medium hover:from-red-600 hover:to-pink-600 transition-all duration-200 shadow-lg hover:shadow-xl group-hover:scale-105">
             Start Session
             <svg className="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -229,3 +229,6 @@ export default function Home() {
     </div>
   )
 }
+
+
+

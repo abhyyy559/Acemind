@@ -7,7 +7,8 @@ class Settings(BaseSettings):
     MONGODB_URL: str = "mongodb://localhost:27017/acemind"
     DATABASE_NAME: str = "acemind"
     
-    # DeepSeek AI
+    # AI APIs (Priority: OpenAI > DeepSeek > Ollama)
+    OPENAI_API_KEY: str = ""
     DEEPSEEK_API_KEY: str = ""
     DEEPSEEK_BASE_URL: str = "https://api.deepseek.com/v1"
     

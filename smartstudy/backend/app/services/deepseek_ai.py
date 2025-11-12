@@ -37,7 +37,7 @@ class DeepSeekAIService:
         
         # For large question sets, generate in batches
         all_questions = []
-        batch_size = 20  # Generate 20 questions at a time
+        batch_size = 5  # Generate 5 questions at a time (optimized for Ollama)
         num_batches = (num_questions + batch_size - 1) // batch_size
         
         for batch_num in range(num_batches):
@@ -371,7 +371,7 @@ Your questions should force the user to recall specific information from the sou
                 # Note: Removed "format": "json" as it causes Ollama to return single objects instead of arrays
             }
             
-            async with httpx.AsyncClient(timeout=300.0) as client:
+            async with httpx.AsyncClient(timeout=600.0) as client:  # 10 minutes for large models
                 logger.info("Sending request to Ollama...")
                 response = await client.post(
                     f"{self.ollama_base_url}/api/chat",

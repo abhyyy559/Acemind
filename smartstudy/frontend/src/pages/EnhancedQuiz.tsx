@@ -50,10 +50,12 @@ const EnhancedQuiz: React.FC = () => {
   const [activeTab, setActiveTab] = useState<"generate" | "take" | "results">(
     "generate"
   );
-  const [inputMethod, setInputMethod] = useState<"text" | "pdf">("text");
+  const [inputMethod, setInputMethod] = useState<"text" | "pdf" | "url">("text");
   const [textInput, setTextInput] = useState("");
+  const [urlInput, setUrlInput] = useState("");
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [topic, setTopic] = useState("");
+  const [numQuestions, setNumQuestions] = useState(10);
   const [difficulty, setDifficulty] = useState<"easy" | "medium" | "hard">(
     "medium"
   );
@@ -158,9 +160,10 @@ const EnhancedQuiz: React.FC = () => {
         formData.append("file", selectedFile);
         if (topic) formData.append("topic", topic);
         formData.append("difficulty", difficulty);
+        formData.append("num_questions", numQuestions.toString());
 
         const response = await fetch(
-          "http://localhost:4000/quiz/generate-from-pdf",
+          "http://localhost:4000/quiz/v2/generate-from-pdf-fast",
           {
             method: "POST",
             body: formData,
@@ -200,19 +203,18 @@ const EnhancedQuiz: React.FC = () => {
         }
       }
 
-      // For text input, use the DeepSeek endpoint
+      // For text input, use the fast V2 endpoint
       const response = await fetch(
-        "http://localhost:4000/quiz/generate-deepseek",
+        "http://localhost:4000/quiz/v2/generate-fast",
         {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
           },
           body: JSON.stringify({
-            prompt: `Generate quiz questions based on this content`,
             content,
             topic: topic || "Study Material",
-            difficulty,
+            num_questions: numQuestions,
           }),
         }
       );
@@ -274,6 +276,48 @@ const EnhancedQuiz: React.FC = () => {
       [questionId]: answer,
     }));
     setShowExplanation(false);
+  };
+
+  const downloadReport = () => {
+    if (!quizResults || !generatedQuiz) return;
+
+    const reportContent = `
+QUIZ REPORT
+===========
+
+Topic: ${generatedQuiz.topic}
+Date: ${new Date().toLocaleDateString()}
+Time: ${new Date().toLocaleTimeString()}
+
+SCORE SUMMARY
+-------------
+Score: ${quizResults.score}/${quizResults.totalQuestions}
+Percentage: ${quizResults.percentage}%
+Time Taken: ${formatTime(quizResults.timeSpent)}
+Average Time per Question: ${Math.round(quizResults.timeSpent / quizResults.totalQuestions)}s
+
+DETAILED RESULTS
+----------------
+${quizResults.detailedResults.map((result, index) => `
+Question ${index + 1}: ${result.isCorrect ? '✓ CORRECT' : '✗ INCORRECT'}
+Q: ${result.question}
+Your Answer: ${result.userAnswer}
+Correct Answer: ${result.correctAnswer}
+${result.explanation ? `Explanation: ${result.explanation}` : ''}
+`).join('\n---\n')}
+
+Performance: ${quizResults.percentage >= 80 ? 'Excellent!' : quizResults.percentage >= 60 ? 'Good!' : 'Needs Improvement'}
+`;
+
+    const blob = new Blob([reportContent], { type: 'text/plain' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `quiz-report-${generatedQuiz.topic.replace(/\s+/g, '-')}-${Date.now()}.txt`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
   };
 
   const handleNextQuestion = () => {
@@ -502,11 +546,12 @@ const EnhancedQuiz: React.FC = () => {
                 <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
                   Choose Input Method
                 </label>
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-3 gap-3">
                   <button
                     onClick={() => {
                       setInputMethod("text");
                       setSelectedFile(null);
+                      setUrlInput("");
                       setError(null);
                     }}
                     className={`px-6 py-3 rounded-lg font-semibold text-sm transition-all ${
@@ -515,12 +560,13 @@ const EnhancedQuiz: React.FC = () => {
                         : "bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600"
                     }`}
                   >
-                    Text Input
+                    📝 Text Input
                   </button>
                   <button
                     onClick={() => {
                       setInputMethod("pdf");
                       setTextInput("");
+                      setUrlInput("");
                       setError(null);
                     }}
                     className={`px-6 py-3 rounded-lg font-semibold text-sm transition-all ${
@@ -529,7 +575,22 @@ const EnhancedQuiz: React.FC = () => {
                         : "bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600"
                     }`}
                   >
-                    PDF Upload
+                    📄 PDF Upload
+                  </button>
+                  <button
+                    onClick={() => {
+                      setInputMethod("url");
+                      setTextInput("");
+                      setSelectedFile(null);
+                      setError(null);
+                    }}
+                    className={`px-6 py-3 rounded-lg font-semibold text-sm transition-all ${
+                      inputMethod === "url"
+                        ? "bg-blue-600 text-white"
+                        : "bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600"
+                    }`}
+                  >
+                    🌐 URL Input
                   </button>
                 </div>
               </div>
@@ -543,7 +604,14 @@ const EnhancedQuiz: React.FC = () => {
                   <div className="relative">
                     <textarea
                       value={textInput}
-                      onChange={(e) => setTextInput(e.target.value)}
+                      onChange={(e) => {
+                        const text = e.target.value;
+                        setTextInput(text);
+                        // Auto-calculate questions: 1 question per ~100 words, min 5, max 20
+                        const wordCount = text.trim().split(/\s+/).length;
+                        const suggested = Math.min(20, Math.max(5, Math.floor(wordCount / 100)));
+                        setNumQuestions(suggested);
+                      }}
                       placeholder="Paste your study material here... The more detailed content you provide, the better questions AI can generate. Include definitions, examples, processes, and key concepts."
                       className="w-full h-64 p-8 border-2 border-gray-200 dark:border-gray-600 rounded-2xl resize-none focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 transition-all duration-300 text-gray-700 dark:text-gray-200 placeholder-gray-400 dark:placeholder-gray-500 text-lg leading-relaxed bg-white dark:bg-gray-700 shadow-inner"
                     />
@@ -670,6 +738,45 @@ const EnhancedQuiz: React.FC = () => {
                 </div>
               )}
 
+              {/* URL Input */}
+              {inputMethod === "url" && (
+                <div className="mb-6">
+                  <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
+                    Enter Web URL
+                  </label>
+                  <input
+                    type="url"
+                    value={urlInput}
+                    onChange={(e) => setUrlInput(e.target.value)}
+                    placeholder="https://example.com/article"
+                    className="w-full px-4 py-3 border-2 border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white text-lg"
+                  />
+                  <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">
+                    📰 Supports: Articles, Wikipedia, Documentation, Blog posts
+                  </p>
+                </div>
+              )}
+
+              {/* Number of Questions */}
+              <div className="mb-6">
+                <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
+                  Number of Questions: {numQuestions}
+                </label>
+                <input
+                  type="range"
+                  min="5"
+                  max="20"
+                  value={numQuestions}
+                  onChange={(e) => setNumQuestions(parseInt(e.target.value))}
+                  className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer dark:bg-gray-700"
+                />
+                <div className="flex justify-between text-xs text-gray-500 dark:text-gray-400 mt-1">
+                  <span>5 (Quick)</span>
+                  <span>10 (Balanced)</span>
+                  <span>20 (Comprehensive)</span>
+                </div>
+              </div>
+
               {/* Generate Button */}
               <button
                 onClick={handleGenerateQuiz}
@@ -750,34 +857,54 @@ const EnhancedQuiz: React.FC = () => {
         {activeTab === "take" && generatedQuiz && (
           <div className="max-w-4xl mx-auto">
             <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-lg border border-gray-200 dark:border-gray-700">
-              {/* Quiz Header */}
-              <div className="flex items-center justify-between mb-10">
-                <div>
-                  <h2 className="text-4xl font-bold text-gray-900 dark:text-white mb-2">
+              {/* Quiz Header with Timer */}
+              <div className="mb-6">
+                <div className="flex items-center justify-between mb-4">
+                  <h2 className="text-3xl font-bold text-gray-900 dark:text-white">
                     {generatedQuiz.topic}
                   </h2>
-                  <p className="text-xl text-gray-600 dark:text-gray-300">
-                    Question {currentQuestionIndex + 1} of{" "}
-                    {generatedQuiz.questions.length}
-                  </p>
-                </div>
-                <div className="text-right">
-                  <div className="text-3xl font-bold text-blue-600 dark:text-blue-400 mb-2">
-                    {formatTime(timeElapsed)}
-                  </div>
-                  <div className="bg-gray-200 dark:bg-gray-700 rounded-full h-3 w-40">
-                    <div
-                      className="bg-gradient-to-r from-blue-500 to-purple-500 h-3 rounded-full transition-all duration-500"
-                      style={{
-                        width: `${
-                          ((currentQuestionIndex + 1) /
-                            generatedQuiz.questions.length) *
-                          100
-                        }%`,
-                      }}
-                    ></div>
+                  <div className="flex items-center gap-3 bg-blue-600 px-5 py-2 rounded-lg shadow-lg">
+                    <svg className="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clipRule="evenodd" />
+                    </svg>
+                    <div className="text-2xl font-bold text-white">
+                      {formatTime(timeElapsed)}
+                    </div>
                   </div>
                 </div>
+                
+                {/* Progress Bar */}
+                <div className="bg-gray-200 dark:bg-gray-700 rounded-full h-2 mb-4">
+                  <div
+                    className="bg-blue-600 h-2 rounded-full transition-all duration-500"
+                    style={{
+                      width: `${((currentQuestionIndex + 1) / generatedQuiz.questions.length) * 100}%`,
+                    }}
+                  ></div>
+                </div>
+                
+                {/* Question Navigation */}
+                <div className="flex flex-wrap gap-2 mb-4">
+                  {generatedQuiz.questions.map((_, index) => (
+                    <button
+                      key={index}
+                      onClick={() => setCurrentQuestionIndex(index)}
+                      className={`w-10 h-10 rounded-lg font-semibold transition-all ${
+                        index === currentQuestionIndex
+                          ? 'bg-blue-600 text-white shadow-lg scale-110'
+                          : userAnswers[generatedQuiz.questions[index].id]
+                          ? 'bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300 border-2 border-green-500'
+                          : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-600'
+                      }`}
+                    >
+                      {index + 1}
+                    </button>
+                  ))}
+                </div>
+                
+                <p className="text-lg text-gray-600 dark:text-gray-300">
+                  Question {currentQuestionIndex + 1} of {generatedQuiz.questions.length}
+                </p>
               </div>
 
               {/* Current Question */}
@@ -908,8 +1035,8 @@ const EnhancedQuiz: React.FC = () => {
                     }
                     className={`px-8 py-4 rounded-2xl font-bold text-lg transition-all duration-300 transform ${
                       isSubmitting || Object.keys(userAnswers).length === 0
-                        ? "bg-gray-200 dark:bg-gray-700 text-gray-400 dark:text-gray-500 cursor-not-allowed"
-                        : "bg-gradient-to-r from-green-500 to-blue-500 text-white hover:from-green-600 hover:to-blue-600 hover:scale-105 shadow-lg"
+                        ? "bg-gray-300 dark:bg-gray-700 text-gray-500 dark:text-gray-500 cursor-not-allowed"
+                        : "bg-blue-600 text-white hover:bg-blue-700 hover:scale-105 shadow-lg"
                     }`}
                   >
                     {isSubmitting ? (
@@ -957,6 +1084,14 @@ const EnhancedQuiz: React.FC = () => {
                 <p className="text-lg text-gray-500 dark:text-gray-400 mt-2">
                   Time taken: {formatTime(quizResults.timeSpent)}
                 </p>
+                
+                {/* Download Button */}
+                <button
+                  onClick={downloadReport}
+                  className="mt-6 px-8 py-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-xl font-semibold hover:from-blue-700 hover:to-purple-700 transition-all shadow-lg hover:shadow-xl transform hover:scale-105"
+                >
+                  📥 Download Report
+                </button>
               </div>
 
               {/* Performance Stats */}
@@ -1065,14 +1200,14 @@ const EnhancedQuiz: React.FC = () => {
               <div className="flex flex-col sm:flex-row gap-4 justify-center">
                 <button
                   onClick={resetQuiz}
-                  className="px-8 py-4 bg-gradient-to-r from-blue-500 to-purple-500 text-white rounded-2xl font-bold text-lg hover:from-blue-600 hover:to-purple-600 transition-all duration-300 transform hover:scale-105 shadow-lg"
+                  className="px-8 py-4 bg-blue-600 text-white rounded-xl font-bold text-lg hover:bg-blue-700 transition-all duration-300 transform hover:scale-105 shadow-lg"
                 >
                   <span className="mr-2">🔄</span>
                   Create New Quiz
                 </button>
                 <button
                   onClick={() => setActiveTab("take")}
-                  className="px-8 py-4 bg-gradient-to-r from-green-500 to-blue-500 text-white rounded-2xl font-bold text-lg hover:from-green-600 hover:to-blue-600 transition-all duration-300 transform hover:scale-105 shadow-lg"
+                  className="px-8 py-4 bg-green-600 text-white rounded-xl font-bold text-lg hover:bg-green-700 transition-all duration-300 transform hover:scale-105 shadow-lg"
                 >
                   <span className="mr-2">🔁</span>
                   Retake Quiz
@@ -1087,3 +1222,6 @@ const EnhancedQuiz: React.FC = () => {
 };
 
 export default EnhancedQuiz;
+
+
+

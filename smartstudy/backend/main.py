@@ -7,7 +7,7 @@ import os
 import logging
 
 # Import routers
-from app.routers import auth, users, quiz, notes, study_sessions
+from app.routers import auth, users, quiz, notes, study_sessions, quiz_v2
 from app.database import init_database, close_database
 from app.config.cors import get_cors_config
 
@@ -75,6 +75,7 @@ async def cors_logging_middleware(request, call_next):
 app.include_router(auth.router, prefix="/auth", tags=["Authentication"])
 app.include_router(users.router, prefix="/users", tags=["Users"])
 app.include_router(quiz.router, prefix="/quiz", tags=["Quiz"])
+app.include_router(quiz_v2.router, prefix="/quiz/v2", tags=["Quiz V2 (Fast)"])
 app.include_router(notes.router, prefix="/notes", tags=["Notes"])
 app.include_router(study_sessions.router, prefix="/study-sessions", tags=["Study Sessions"])
 

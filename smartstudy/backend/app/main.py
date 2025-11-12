@@ -63,7 +63,7 @@ os.makedirs(settings.UPLOAD_DIR, exist_ok=True)
 app.mount("/uploads", StaticFiles(directory=settings.UPLOAD_DIR), name="uploads")
 
 # Import routers
-from app.routers import auth, users, notes, study_sessions, quiz, test_quiz
+from app.routers import auth, users, notes, study_sessions, quiz, quiz_v2, test_quiz
 
 # Include routers
 app.include_router(test_quiz.router, prefix="/test", tags=["Test Quiz Generation"])
@@ -71,6 +71,7 @@ app.include_router(auth.router, prefix="/auth", tags=["Authentication"])
 app.include_router(users.router, prefix="/users", tags=["Users"])
 app.include_router(notes.router, prefix="/notes", tags=["Notes"])
 app.include_router(study_sessions.router, prefix="/study-sessions", tags=["Study Sessions"])
+app.include_router(quiz_v2.router, prefix="/quiz/v2", tags=["Quiz V2 - Fast"])
 app.include_router(quiz.router, prefix="/quiz", tags=["Quiz"])
 
 # Health check endpoints
