@@ -18,6 +18,10 @@ class Settings(BaseSettings):
     OLLAMA_BASE_URL: str = "http://localhost:11434"
     OLLAMA_MODEL: str = "deepseek-coder-v2:latest"
     
+    # Google Vision API (OCR for image-based PDFs)
+    GOOGLE_APPLICATION_CREDENTIALS: str = ""
+    GOOGLE_CLOUD_PROJECT: str = ""
+    
     # Server
     HOST: str = "0.0.0.0"
     PORT: int = 4000  # Changed to match NestJS backend port
@@ -38,5 +42,6 @@ class Settings(BaseSettings):
     class Config:
         env_file = ".env"
         case_sensitive = True
+        extra = "ignore"  # Ignore extra fields in .env file
 
 settings = Settings()
