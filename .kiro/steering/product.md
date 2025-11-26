@@ -1,31 +1,43 @@
 # Product Overview
 
-**AceMind** (formerly SmartStudy) is an AI-powered study platform that transforms traditional learning materials into personalized, interactive quizzes and study tools.
+This workspace contains two educational AI-powered applications:
 
-## Core Purpose
+## AceMind (smartstudy/)
+AI-powered study platform that transforms learning materials into interactive quizzes and personalized study plans.
 
-Help students study more effectively by leveraging AI to analyze content and generate contextually relevant assessment materials.
+**Core Features:**
+- AI quiz generation from text, PDFs, and URLs
+- Personalized study planning with AI optimization
+- Progress tracking with study streaks
+- Professional PDF report generation
+- Interactive quiz interface with keyboard shortcuts
+- Focus room for distraction-free studying
+- Notes management with cloud sync
 
-## Key Features
+**Target Users:** Students (high school/college), educators, self-learners, professionals preparing for certifications
 
-- **AI Quiz Generation**: Convert text or PDF content into intelligent multiple-choice quizzes using DeepSeek AI
-- **Study Planning**: AI-powered study schedule optimization with calendar interface
-- **Notes Management**: Organized note-taking with search, categorization, and tagging
-- **Focus Room**: 3D immersive study environment with ambient sounds
-- **Analytics Dashboard**: Performance tracking with detailed metrics and insights
-- **Progress Tracking**: Study streaks, quiz scores, and completion statistics
+**Key Value:** Automates quiz creation, provides structured study schedules, tracks measurable progress, and makes learning engaging through AI-powered personalization.
 
-## Target Users
+## GrowMap (Growmap/)
+AI-powered learning roadmap generator that creates personalized, interactive learning paths for any skill or job role.
 
-- Students preparing for exams
-- Educators creating assessment materials
-- Self-learners seeking structured study approaches
-- Professionals validating skills
+**Core Features:**
+- AI-generated hierarchical learning roadmaps
+- Interactive mind map visualization (Markmap)
+- Automatic resource discovery from YouTube, Coursera, edX
+- Difficulty level customization (beginner/intermediate/advanced)
+- Export roadmaps (HTML, PNG, SVG, PDF)
+- Roadmap saving and sharing via unique URLs
+- Progress tracking for learning paths
 
-## Design Philosophy
+**Target Users:** Career changers, skill learners, students planning learning paths, professionals upskilling
 
-- Modern, clean UI with glassmorphism effects and gradient accents
-- Mobile-first responsive design
-- Intuitive navigation with clear visual hierarchy
-- Immediate feedback and real-time interactions
-- Accessibility-compliant components
+**Key Value:** Eliminates hours of research by automatically generating structured learning paths with curated resources, visualized as interactive mind maps.
+
+## Shared Philosophy
+Both applications focus on:
+- Privacy-first approach (local AI processing where possible)
+- Modern, responsive UI with dark mode
+- Fast performance (5-12 second generation times)
+- No login required for basic features (optional accounts for saving)
+- Research-backed learning science (active recall, spaced repetition)

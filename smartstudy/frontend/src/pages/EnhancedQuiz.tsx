@@ -487,11 +487,8 @@ const EnhancedQuiz: React.FC = () => {
   };
 
   const getScoreEmoji = (percentage: number) => {
-    if (percentage >= 90) return "🏆";
-    if (percentage >= 80) return "🎉";
-    if (percentage >= 70) return "👏";
-    if (percentage >= 60) return "👍";
-    return "💪";
+    // Removed emojis for cleaner UI
+    return "";
   };
 
   return (
@@ -614,7 +611,7 @@ const EnhancedQuiz: React.FC = () => {
                     <button
                       key={value}
                       onClick={() => setDifficulty(value as any)}
-                      className={`px-4 py-3 rounded-lg font-semibold text-sm transition-all ${
+                      className={`px-4 py-2 rounded-lg font-medium text-sm transition-all ${
                         difficulty === value
                           ? color === "green"
                             ? "bg-green-600 text-white"
@@ -643,13 +640,13 @@ const EnhancedQuiz: React.FC = () => {
                       setUrlInput("");
                       setError(null);
                     }}
-                    className={`px-6 py-3 rounded-lg font-semibold text-sm transition-all ${
+                    className={`px-4 py-2 rounded-lg font-medium text-sm transition-all ${
                       inputMethod === "text"
                         ? "bg-blue-600 text-white"
                         : "bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600"
                     }`}
                   >
-                    📝 Text Input
+                    Text Input
                   </button>
                   <button
                     onClick={() => {
@@ -658,13 +655,13 @@ const EnhancedQuiz: React.FC = () => {
                       setUrlInput("");
                       setError(null);
                     }}
-                    className={`px-6 py-3 rounded-lg font-semibold text-sm transition-all ${
+                    className={`px-4 py-2 rounded-lg font-medium text-sm transition-all ${
                       inputMethod === "pdf"
                         ? "bg-blue-600 text-white"
                         : "bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600"
                     }`}
                   >
-                    📄 PDF Upload
+                    PDF Upload
                   </button>
                   <button
                     onClick={() => {
@@ -673,13 +670,13 @@ const EnhancedQuiz: React.FC = () => {
                       setSelectedFile(null);
                       setError(null);
                     }}
-                    className={`px-6 py-3 rounded-lg font-semibold text-sm transition-all ${
+                    className={`px-4 py-2 rounded-lg font-medium text-sm transition-all ${
                       inputMethod === "url"
                         ? "bg-blue-600 text-white"
                         : "bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600"
                     }`}
                   >
-                    🌐 URL Input
+                    URL Input
                   </button>
                 </div>
               </div>

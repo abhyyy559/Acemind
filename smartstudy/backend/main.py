@@ -8,6 +8,7 @@ import logging
 
 # Import routers
 from app.routers import auth, users, quiz, notes, study_sessions, quiz_v2
+from app.routes import roadmap
 from app.database import init_database, close_database
 from app.config.cors import get_cors_config
 
@@ -78,6 +79,11 @@ app.include_router(quiz.router, prefix="/quiz", tags=["Quiz"])
 app.include_router(quiz_v2.router, prefix="/quiz/v2", tags=["Quiz V2 (Fast)"])
 app.include_router(notes.router, prefix="/notes", tags=["Notes"])
 app.include_router(study_sessions.router, prefix="/study-sessions", tags=["Study Sessions"])
+
+# Debug: Log roadmap router registration
+logging.info(f"Registering roadmap router with routes: {[route.path for route in roadmap.router.routes]}")
+app.include_router(roadmap.router, prefix="/roadmap", tags=["Roadmap"])
+logging.info(f"Total app routes after roadmap: {[route.path for route in app.routes if 'roadmap' in route.path]}")
 
 @app.get("/")
 async def root():

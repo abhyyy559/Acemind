@@ -1,9 +1,10 @@
 import { useState, useEffect } from 'react'
-import { studySessionService, StudyTask, StudyStats } from '../services/studySessionService'
-import { ApiError } from '../services/api'
+import { useAuth } from '../contexts/AuthContext'
+import { studyPlanService, StudyPlan, StudyTask, CreateStudyPlanInput } from '../services/studyPlanService'
 import LoadingSpinner from '../components/LoadingSpinner'
 import ErrorMessage from '../components/ErrorMessage'
 import SuccessMessage from '../components/SuccessMessage'
+import { ApiError } from '@/services/api'
 
 interface SubjectInput {
   id: string
@@ -34,25 +35,30 @@ interface MotivationalMessage {
 }
 
 export default function Planner() {
-  const [activeTab, setActiveTab] = useState<'planner' | 'progress' | 'recap'>('planner')
+  const { user } = useAuth()
+  const [activeTab, setActiveTab] = useState<'planner' | 'progress' | 'myplans'>('planner')
   const [selectedDate, setSelectedDate] = useState(new Date())
   const [tasks, setTasks] = useState<StudyTask[]>([])
-  const [dayPlans, setDayPlans] = useState<DayPlan[]>([])
-  const [stats, setStats] = useState<StudyStats | null>(null)
+  const [studyPlans, setStudyPlans] = useState<StudyPlan[]>([])
+  const [currentPlan, setCurrentPlan] = useState<StudyPlan | null>(null)
   const [loading, setLoading] = useState(false)
-  const [error, setError] = useState<ApiError | null>(null)
+  const [error, setError] = useState<Error | null>(null)
   const [generatingPlan, setGeneratingPlan] = useState(false)
   const [successMessage, setSuccessMessage] = useState('')
-  const [draggedTask, setDraggedTask] = useState<string | null>(null)
   const [daysUntilExam, setDaysUntilExam] = useState<number>(0)
 
   // Enhanced AI Planner Data
-  const [studyPlanInput, setStudyPlanInput] = useState<StudyPlanInput>({
+  const [studyPlanInput, setStudyPlanInput] = useState<CreateStudyPlanInput>({
+    title: '',
     subjects: [],
-    dailyStudyHours: 6,
-    examDate: '',
+    daily_study_hours: 6,
+    exam_date: '',
     goals: ''
   })
+  
+  // Day plans and drag state
+  const [dayPlans, setDayPlans] = useState<DayPlan[]>([])
+  const [draggedTask, setDraggedTask] = useState<string | null>(null)
 
   // Motivational messages based on progress
   const getMotivationalMessage = (completedTasks: number, totalTasks: number): MotivationalMessage => {
@@ -66,27 +72,30 @@ export default function Planner() {
   }
 
   useEffect(() => {
-    loadPlannerData()
-  }, [])
+    if (user) {
+      loadPlannerData()
+    }
+  }, [user])
 
   const loadPlannerData = async () => {
     try {
       setLoading(true)
       setError(null)
       
-      // Initialize with empty data - user will generate plan
-      setTasks([])
-      setStats({
-        today: 0,
-        week: 0,
-        total: 0,
-      })
-    } catch (err) {
-      if (err instanceof ApiError) {
-        setError(err)
-      } else {
-        setError(new ApiError('Failed to load planner data', 'LOAD_ERROR'))
+      // Load study plans from Supabase
+      const plans = await studyPlanService.getStudyPlans()
+      setStudyPlans(plans)
+      
+      // Load active plan if exists
+      const activePlan = plans.find(p => p.status === 'active')
+      if (activePlan) {
+        setCurrentPlan(activePlan)
+        const planTasks = await studyPlanService.getStudyTasks(activePlan.id)
+        setTasks(planTasks)
       }
+    } catch (err) {
+      console.error('Error loading planner data:', err)
+      setError(err as Error)
     } finally {
       setLoading(false)
     }
@@ -131,133 +140,46 @@ export default function Planner() {
       setError(null)
 
       if (studyPlanInput.subjects.length === 0) {
-        setError(new ApiError('Please add at least one subject', 'VALIDATION_ERROR'))
+        setError(new Error('Please add at least one subject'))
         return
       }
 
-      if (!studyPlanInput.examDate) {
-        setError(new ApiError('Please set your exam date', 'VALIDATION_ERROR'))
+      if (!studyPlanInput.exam_date) {
+        setError(new Error('Please set your exam date'))
         return
+      }
+
+      if (!studyPlanInput.title) {
+        studyPlanInput.title = `Study Plan for ${studyPlanInput.exam_date}`
       }
 
       // Calculate days until exam
-      const examDate = new Date(studyPlanInput.examDate)
+      const examDate = new Date(studyPlanInput.exam_date)
       const today = new Date()
       const calculatedDays = Math.ceil((examDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24))
       setDaysUntilExam(calculatedDays)
 
       if (calculatedDays <= 0) {
-        setError(new ApiError('Exam date must be in the future', 'VALIDATION_ERROR'))
+        setError(new Error('Exam date must be in the future'))
         return
       }
 
-      // Generate day-wise study plan
-      const generatedDayPlans: DayPlan[] = []
-      const allTasks: StudyTask[] = []
+      // Save to Supabase
+      const { plan, tasks: createdTasks } = await studyPlanService.createStudyPlan(studyPlanInput)
       
-      // Create study phases based on timeline
-      const phases = [
-        { name: 'Foundation', days: Math.floor(calculatedDays * 0.4), focus: 'learning' },
-        { name: 'Practice', days: Math.floor(calculatedDays * 0.4), focus: 'practice' },
-        { name: 'Revision', days: Math.floor(calculatedDays * 0.2), focus: 'revision' }
-      ]
-
-      let currentDay = 0
-      
-      phases.forEach((phase, phaseIndex) => {
-        for (let day = 0; day < phase.days; day++) {
-          const currentDate = new Date(today)
-          currentDate.setDate(today.getDate() + currentDay)
-          
-          const dayTasks: StudyTask[] = []
-          let dailyTimeAllocated = 0
-          const targetDailyMinutes = studyPlanInput.dailyStudyHours * 60
-
-          // Distribute subjects across the day based on priority and difficulty
-          studyPlanInput.subjects.forEach((subject, subjectIndex) => {
-            if (dailyTimeAllocated >= targetDailyMinutes) return
-
-            // Calculate time allocation based on difficulty, priority, and phase
-            const difficultyMultiplier = subject.difficulty === 'hard' ? 1.5 : subject.difficulty === 'easy' ? 0.7 : 1
-            const priorityMultiplier = subject.priority === 'high' ? 1.3 : subject.priority === 'low' ? 0.8 : 1
-            const phaseMultiplier = phase.focus === 'revision' ? 0.8 : 1.2
-            
-            const baseTime = (targetDailyMinutes / studyPlanInput.subjects.length)
-            const adjustedTime = Math.min(
-              Math.round(baseTime * difficultyMultiplier * priorityMultiplier * phaseMultiplier),
-              targetDailyMinutes - dailyTimeAllocated
-            )
-
-            if (adjustedTime > 0) {
-              // Generate task type based on phase and day
-              const taskTypes = {
-                learning: ['Study', 'Read', 'Understand', 'Learn'],
-                practice: ['Practice', 'Solve', 'Apply', 'Exercise'],
-                revision: ['Review', 'Revise', 'Mock Test', 'Quick Review']
-              }
-              
-              const availableTypes = taskTypes[phase.focus as keyof typeof taskTypes]
-              const taskType = availableTypes[day % availableTypes.length]
-              
-              const task: StudyTask = {
-                id: `day-${currentDay}-${subjectIndex}-${Date.now()}`,
-                title: `${taskType}: ${subject.name} - ${subject.topic}`,
-                description: `${phase.name} phase: ${taskType.toLowerCase()} ${subject.topic} (${subject.difficulty} level). Day ${currentDay + 1} of ${calculatedDays}.`,
-                subject: subject.name,
-                estimatedDuration: adjustedTime,
-                priority: subject.priority,
-                completed: false,
-                createdAt: new Date(),
-                updatedAt: new Date(),
-              }
-
-              dayTasks.push(task)
-              allTasks.push(task)
-              dailyTimeAllocated += adjustedTime
-            }
-          })
-
-          // Add break reminders for longer study days
-          if (dailyTimeAllocated > 240) { // More than 4 hours
-            const breakTask: StudyTask = {
-              id: `break-${currentDay}-${Date.now()}`,
-              title: `Take a Break - You've earned it! 🌟`,
-              description: `15-minute break to recharge. Stay hydrated and stretch!`,
-              subject: 'Break',
-              estimatedDuration: 15,
-              priority: 'medium',
-              completed: false,
-              createdAt: new Date(),
-              updatedAt: new Date(),
-            }
-            dayTasks.push(breakTask)
-            allTasks.push(breakTask)
-          }
-
-          generatedDayPlans.push({
-            date: currentDate.toISOString().split('T')[0],
-            tasks: dayTasks,
-            totalHours: Math.round(dailyTimeAllocated / 60 * 10) / 10,
-            completed: 0
-          })
-
-          currentDay++
-        }
-      })
-
-      setDayPlans(generatedDayPlans)
-      setTasks(allTasks)
-      setSuccessMessage(`Generated ${calculatedDays}-day study plan with ${allTasks.length} tasks! 🎯 ${calculatedDays} days until your exam!`)
+      setCurrentPlan(plan)
+      setTasks(createdTasks)
+      setSuccessMessage(`Generated ${calculatedDays}-day study plan with ${createdTasks.length} tasks! ${calculatedDays} days until your exam!`)
       setActiveTab('progress')
+      
+      // Reload plans list
+      await loadPlannerData()
       
       // Clear success message after 5 seconds
       setTimeout(() => setSuccessMessage(''), 5000)
     } catch (err) {
-      if (err instanceof ApiError) {
-        setError(err)
-      } else {
-        setError(new ApiError('Failed to generate AI study plan', 'AI_PLAN_ERROR'))
-      }
+      console.error('Error generating study plan:', err)
+      setError(err as Error)
     } finally {
       setGeneratingPlan(false)
     }
@@ -381,12 +303,12 @@ export default function Planner() {
 
       {/* Tab Navigation */}
       <div className="flex justify-center mb-8">
-        <div className="bg-white dark:bg-gray-800 p-1 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700">
+        <div className="bg-white dark:bg-gray-800 p-1 rounded-lg border border-gray-200 dark:border-gray-700">
           <button
             onClick={() => setActiveTab('planner')}
-            className={`px-6 py-3 rounded-lg font-semibold text-sm transition-all ${
+            className={`px-4 py-2 rounded-lg font-medium text-sm transition-all ${
               activeTab === 'planner'
-                ? 'bg-indigo-600 text-white'
+                ? 'bg-blue-600 text-white'
                 : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700'
             }`}
           >
@@ -394,9 +316,9 @@ export default function Planner() {
           </button>
           <button
             onClick={() => setActiveTab('progress')}
-            className={`px-6 py-3 rounded-lg font-semibold text-sm transition-all ${
+            className={`px-4 py-2 rounded-lg font-medium text-sm transition-all ${
               activeTab === 'progress'
-                ? 'bg-indigo-600 text-white'
+                ? 'bg-blue-600 text-white'
                 : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700'
             }`}
           >
@@ -404,9 +326,9 @@ export default function Planner() {
           </button>
           <button
             onClick={() => setActiveTab('recap')}
-            className={`px-6 py-3 rounded-lg font-semibold text-sm transition-all ${
+            className={`px-4 py-2 rounded-lg font-medium text-sm transition-all ${
               activeTab === 'recap'
-                ? 'bg-indigo-600 text-white'
+                ? 'bg-blue-600 text-white'
                 : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700'
             }`}
           >
@@ -452,8 +374,11 @@ export default function Planner() {
                   type="number"
                   min="1"
                   max="16"
-                  value={studyPlanInput.dailyStudyHours}
-                  onChange={(e) => setStudyPlanInput(prev => ({ ...prev, dailyStudyHours: parseInt(e.target.value) || 6 }))}
+                  value={studyPlanInput.daily_study_hours}
+                  onChange={(e) => setStudyPlanInput(prev => ({
+                    ...prev,
+                    daily_study_hours: parseInt(e.target.value) || 6
+                  }))}
                   className="w-full p-4 border-2 border-gray-200 dark:border-gray-600 rounded-2xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all duration-200 text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-700 text-lg"
                 />
               </div>
@@ -465,12 +390,16 @@ export default function Planner() {
                 </label>
                 <input
                   type="date"
-                  value={studyPlanInput.examDate}
+                  value={studyPlanInput.exam_date}
                   onChange={(e) => {
-                    setStudyPlanInput(prev => ({ ...prev, examDate: e.target.value }))
+                    const newDate = e.target.value
+                    setStudyPlanInput(prev => ({
+                      ...prev,
+                      exam_date: newDate
+                    }))
                     // Calculate days remaining when date changes
-                    if (e.target.value) {
-                      const examDate = new Date(e.target.value)
+                    if (newDate) {
+                      const examDate = new Date(newDate)
                       const today = new Date()
                       const days = Math.ceil((examDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24))
                       setDaysUntilExam(days)
@@ -478,7 +407,7 @@ export default function Planner() {
                   }}
                   className="w-full p-4 border-2 border-gray-200 dark:border-gray-600 rounded-2xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all duration-200 text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-700 text-lg"
                 />
-                {studyPlanInput.examDate && daysUntilExam > 0 && (
+                {studyPlanInput.exam_date && daysUntilExam > 0 && (
                   <div className="mt-3 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
                     <div className="text-center">
                       <span className="text-sm font-semibold text-blue-700 dark:text-blue-300">
@@ -502,7 +431,7 @@ export default function Planner() {
                   </label>
                   <button
                     onClick={addSubject}
-                    className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors font-medium text-sm"
+                    className="px-4 py-2 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 transition-colors font-medium"
                   >
                     Add Subject
                   </button>
@@ -598,7 +527,10 @@ export default function Planner() {
                 </label>
                 <textarea
                   value={studyPlanInput.goals}
-                  onChange={(e) => setStudyPlanInput(prev => ({ ...prev, goals: e.target.value }))}
+                  onChange={(e) => setStudyPlanInput(prev => ({
+                    ...prev,
+                    goals: e.target.value
+                  }))}
                   placeholder="e.g., Score 90% in final exam, Master difficult concepts, Complete all practice tests"
                   rows={4}
                   className="w-full p-4 border-2 border-gray-200 dark:border-gray-600 rounded-2xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all duration-200 text-gray-700 dark:text-gray-200 placeholder-gray-400 dark:placeholder-gray-500 resize-none bg-white dark:bg-gray-700"
@@ -608,23 +540,20 @@ export default function Planner() {
               {/* Generate Button */}
               <button
                 onClick={handleGenerateAIPlan}
-                disabled={generatingPlan || studyPlanInput.subjects.length === 0 || !studyPlanInput.examDate}
-                className={`w-full py-5 px-8 rounded-2xl font-bold text-xl transition-all duration-200 ${
-                  generatingPlan || studyPlanInput.subjects.length === 0 || !studyPlanInput.examDate
+                disabled={generatingPlan || studyPlanInput.subjects.length === 0 || !studyPlanInput.exam_date}
+                className={`w-full px-4 py-3 rounded-lg font-medium text-sm transition-all duration-300 ${
+                  generatingPlan || studyPlanInput.subjects.length === 0 || !studyPlanInput.exam_date
                     ? 'bg-gray-200 dark:bg-gray-700 text-gray-400 dark:text-gray-500 cursor-not-allowed'
-                    : 'bg-indigo-600 dark:bg-indigo-500 text-white hover:bg-indigo-700 dark:hover:bg-indigo-600 shadow-2xl hover:shadow-3xl transform hover:-translate-y-1'
+                    : 'bg-blue-600 text-white hover:bg-blue-700 hover:scale-105 hover:shadow-lg'
                 }`}
               >
                 {generatingPlan ? (
                   <div className="flex items-center justify-center">
-                    <LoadingSpinner size="sm" color="text-white" className="mr-4" />
+                    <LoadingSpinner size="sm" color="text-white" className="mr-2" />
                     Generating AI Study Plan...
                   </div>
                 ) : (
-                  <div className="flex items-center justify-center">
-                    <span className="mr-3 text-2xl">🚀</span>
-                    Generate AI Study Plan
-                  </div>
+                  'Generate AI Study Plan'
                 )}
               </button>
             </div>
@@ -649,9 +578,9 @@ export default function Planner() {
                   <div className="flex items-center gap-4">
                     <button
                       onClick={downloadStudyPlan}
-                      className="px-6 py-3 bg-white/20 hover:bg-white/30 text-white rounded-xl font-semibold transition-all duration-200 flex items-center gap-2 backdrop-blur-sm"
+                      className="px-4 py-2 bg-white/20 hover:bg-white/30 text-white text-sm rounded-lg font-medium transition-all duration-300 flex items-center gap-2 backdrop-blur-sm hover:scale-105"
                     >
-                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                       </svg>
                       Download Plan
