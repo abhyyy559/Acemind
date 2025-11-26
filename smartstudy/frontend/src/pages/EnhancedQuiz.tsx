@@ -73,6 +73,8 @@ const EnhancedQuiz: React.FC = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [dragActive, setDragActive] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [quizHistory, setQuizHistory] = useState<QuizResult[]>([]);
+  const [showHistory, setShowHistory] = useState(false);
 
   // Loading states for multi-step loader
   const loadingStates = [
@@ -94,6 +96,77 @@ const EnhancedQuiz: React.FC = () => {
     }
     return () => clearInterval(interval);
   }, [activeTab, quizStartTime]);
+
+  // Keyboard shortcuts
+  useEffect(() => {
+    const handleKeyPress = (e: KeyboardEvent) => {
+      // Only handle shortcuts when taking quiz
+      if (activeTab !== 'take' || !generatedQuiz) return;
+
+      // Prevent shortcuts when typing in input fields
+      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
+
+      const currentQuestion = generatedQuiz.questions[currentQuestionIndex];
+      
+      switch(e.key) {
+        case ' ': // Space = Next question
+          e.preventDefault();
+          handleNextQuestion();
+          break;
+        case 'Enter': // Enter = Submit quiz
+          if (currentQuestionIndex === generatedQuiz.questions.length - 1) {
+            e.preventDefault();
+            handleSubmitQuiz();
+          }
+          break;
+        case '1':
+        case '2':
+        case '3':
+        case '4':
+          // Number keys = Select option
+          e.preventDefault();
+          const optionIndex = parseInt(e.key) - 1;
+          if (currentQuestion && optionIndex < currentQuestion.options.length) {
+            handleAnswerSelect(currentQuestion.id, currentQuestion.options[optionIndex]);
+          }
+          break;
+        case 'ArrowLeft': // Previous question
+          e.preventDefault();
+          handlePreviousQuestion();
+          break;
+        case 'ArrowRight': // Next question
+          e.preventDefault();
+          handleNextQuestion();
+          break;
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyPress);
+    return () => window.removeEventListener('keydown', handleKeyPress);
+  }, [activeTab, generatedQuiz, currentQuestionIndex]);
+
+  // Load quiz history from localStorage
+  useEffect(() => {
+    const savedHistory = localStorage.getItem('quizHistory');
+    if (savedHistory) {
+      setQuizHistory(JSON.parse(savedHistory));
+    }
+  }, []);
+
+  // Save quiz result to history
+  const saveToHistory = (result: QuizResult) => {
+    const newHistory = [
+      {
+        ...result,
+        topic: generatedQuiz?.topic || 'Quiz',
+        date: new Date().toISOString(),
+      },
+      ...quizHistory
+    ].slice(0, 10); // Keep only last 10
+    
+    setQuizHistory(newHistory);
+    localStorage.setItem('quizHistory', JSON.stringify(newHistory));
+  };
 
   // Format time display
   const formatTime = (seconds: number) => {
@@ -391,6 +464,7 @@ const EnhancedQuiz: React.FC = () => {
     await new Promise((resolve) => setTimeout(resolve, 1000));
 
     setQuizResults(result);
+    saveToHistory(result); // Save to history
     setActiveTab("results");
     setIsSubmitting(false);
   };
@@ -917,9 +991,19 @@ const EnhancedQuiz: React.FC = () => {
                   ))}
                 </div>
                 
-                <p className="text-lg text-gray-600 dark:text-gray-300">
-                  Question {currentQuestionIndex + 1} of {generatedQuiz.questions.length}
-                </p>
+                <div className="flex items-center justify-between">
+                  <p className="text-lg text-gray-600 dark:text-gray-300">
+                    Question {currentQuestionIndex + 1} of {generatedQuiz.questions.length}
+                  </p>
+                  <div className="text-xs text-gray-500 dark:text-gray-400 flex items-center gap-2">
+                    <kbd className="px-2 py-1 bg-gray-100 dark:bg-gray-700 rounded border border-gray-300 dark:border-gray-600">1-4</kbd>
+                    <span>Select</span>
+                    <kbd className="px-2 py-1 bg-gray-100 dark:bg-gray-700 rounded border border-gray-300 dark:border-gray-600">Space</kbd>
+                    <span>Next</span>
+                    <kbd className="px-2 py-1 bg-gray-100 dark:bg-gray-700 rounded border border-gray-300 dark:border-gray-600">←→</kbd>
+                    <span>Navigate</span>
+                  </div>
+                </div>
               </div>
 
               {/* Current Question */}

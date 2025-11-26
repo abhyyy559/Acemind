@@ -4,10 +4,55 @@ import { Link } from 'react-router-dom'
 export default function Home() {
   const [currentTime, setCurrentTime] = useState(new Date())
   const [user] = useState({ name: 'Student' }) // Mock user data
+  const [studyStreak, setStudyStreak] = useState(0)
 
   useEffect(() => {
     const timer = setInterval(() => setCurrentTime(new Date()), 60000)
     return () => clearInterval(timer)
+  }, [])
+
+  // Calculate study streak
+  useEffect(() => {
+    const calculateStreak = () => {
+      const quizHistory = localStorage.getItem('quizHistory');
+      if (!quizHistory) {
+        setStudyStreak(0);
+        return;
+      }
+
+      const history = JSON.parse(quizHistory);
+      const dates = history.map((h: any) => new Date(h.date).toDateString());
+      const uniqueDates = [...new Set(dates)].sort((a, b) => new Date(b).getTime() - new Date(a).getTime());
+
+      let streak = 0;
+      const today = new Date().toDateString();
+      const yesterday = new Date(Date.now() - 86400000).toDateString();
+
+      // Check if studied today or yesterday
+      if (uniqueDates[0] === today || uniqueDates[0] === yesterday) {
+        streak = 1;
+        let currentDate = new Date(uniqueDates[0]);
+
+        for (let i = 1; i < uniqueDates.length; i++) {
+          const prevDate = new Date(currentDate);
+          prevDate.setDate(prevDate.getDate() - 1);
+          
+          if (uniqueDates[i] === prevDate.toDateString()) {
+            streak++;
+            currentDate = prevDate;
+          } else {
+            break;
+          }
+        }
+      }
+
+      setStudyStreak(streak);
+    };
+
+    calculateStreak();
+    // Recalculate every minute
+    const interval = setInterval(calculateStreak, 60000);
+    return () => clearInterval(interval);
   }, [])
 
   const formatTime = (date: Date) => {
@@ -64,7 +109,7 @@ export default function Home() {
       {/* Quick Stats */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-12">
         {[
-          { label: 'Study Streak', value: '7 days', icon: '🔥', color: 'from-orange-400 to-red-500' },
+          { label: 'Study Streak', value: `${studyStreak} ${studyStreak === 1 ? 'day' : 'days'}`, icon: '🔥', color: 'from-orange-400 to-red-500' },
           { label: 'Quizzes Taken', value: '23', icon: '🧠', color: 'from-green-400 to-emerald-500' },
           { label: 'Average Score', value: '87%', icon: '📊', color: 'from-blue-400 to-indigo-500' },
           { label: 'Focus Time', value: '4.2h', icon: '⏱️', color: 'from-purple-400 to-pink-500' },
