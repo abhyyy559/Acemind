@@ -784,116 +784,198 @@ Ensure the JSON is valid and complete.`;
         </div>
       )}
 
-      {/* Results Tab */}
+      {/* Results Tab - Enhanced Design */}
       {activeTab === "results" && quizResults && generatedQuiz && (
-        <div className="max-w-4xl mx-auto">
-          <div className="bg-white dark:bg-gray-800 rounded-3xl p-10 shadow-2xl">
-            {/* Results Header */}
-            <div className="text-center mb-8">
-              <div
-                className={`w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-6 ${
-                  quizResults.percentage >= 80
-                    ? "bg-green-100 dark:bg-green-900"
-                    : quizResults.percentage >= 60
-                    ? "bg-yellow-100 dark:bg-yellow-900"
-                    : "bg-red-100 dark:bg-red-900"
-                }`}
-              >
-                <span className="text-4xl">
+        <div className="max-w-6xl mx-auto">
+          {/* Celebration Banner */}
+          <div className={`relative overflow-hidden rounded-3xl mb-8 ${
+            quizResults.percentage >= 80
+              ? "bg-gradient-to-r from-green-500 via-emerald-500 to-teal-500"
+              : quizResults.percentage >= 60
+              ? "bg-gradient-to-r from-yellow-500 via-amber-500 to-orange-500"
+              : "bg-gradient-to-r from-blue-500 via-indigo-500 to-purple-500"
+          }`}>
+            <div className="absolute inset-0 bg-black opacity-10"></div>
+            <div className="relative px-8 py-12 text-center text-white">
+              <div className="inline-block animate-bounce mb-4">
+                <div className="text-7xl">
                   {quizResults.percentage >= 80
                     ? "🏆"
                     : quizResults.percentage >= 60
-                    ? "👍"
-                    : "📚"}
-                </span>
+                    ? "🎯"
+                    : "💪"}
+                </div>
               </div>
-              <h2 className="text-4xl font-bold text-gray-900 dark:text-white mb-4">
-                Quiz Complete!
-              </h2>
-              <p className="text-xl text-gray-600 dark:text-gray-300">
+              <h1 className="text-5xl font-bold mb-4 drop-shadow-lg">
                 {quizResults.percentage >= 80
-                  ? "Excellent work! 🎉"
+                  ? "Outstanding Performance!"
                   : quizResults.percentage >= 60
-                  ? "Good job! Keep it up! 💪"
-                  : "Keep studying! You'll improve! 🌟"}
+                  ? "Great Job!"
+                  : "Keep Going!"}
+              </h1>
+              <p className="text-2xl opacity-90">
+                {quizResults.percentage >= 80
+                  ? "You've mastered this topic! 🌟"
+                  : quizResults.percentage >= 60
+                  ? "You're on the right track! 🚀"
+                  : "Practice makes perfect! 📚"}
               </p>
             </div>
+          </div>
 
-            {/* Score Summary */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-              <div className="text-center p-6 bg-gray-50 dark:bg-gray-700 rounded-2xl">
-                <div
-                  className={`text-4xl font-bold mb-2 ${
-                    quizResults.percentage >= 80
-                      ? "text-green-600 dark:text-green-400"
-                      : quizResults.percentage >= 60
-                      ? "text-yellow-600 dark:text-yellow-400"
-                      : "text-red-600 dark:text-red-400"
-                  }`}
-                >
-                  {quizResults.percentage}%
-                </div>
-                <div className="text-gray-600 dark:text-gray-300 font-medium">
-                  Overall Score
+          {/* Main Results Card */}
+          <div className="bg-white dark:bg-gray-800 rounded-3xl p-8 shadow-2xl mb-8">
+            {/* Score Circle */}
+            <div className="flex justify-center mb-8">
+              <div className="relative">
+                <svg className="transform -rotate-90" width="200" height="200">
+                  <circle
+                    cx="100"
+                    cy="100"
+                    r="90"
+                    stroke="currentColor"
+                    strokeWidth="12"
+                    fill="none"
+                    className="text-gray-200 dark:text-gray-700"
+                  />
+                  <circle
+                    cx="100"
+                    cy="100"
+                    r="90"
+                    stroke="currentColor"
+                    strokeWidth="12"
+                    fill="none"
+                    strokeDasharray={`${2 * Math.PI * 90}`}
+                    strokeDashoffset={`${2 * Math.PI * 90 * (1 - quizResults.percentage / 100)}`}
+                    className={`transition-all duration-1000 ${
+                      quizResults.percentage >= 80
+                        ? "text-green-500"
+                        : quizResults.percentage >= 60
+                        ? "text-yellow-500"
+                        : "text-blue-500"
+                    }`}
+                    strokeLinecap="round"
+                  />
+                </svg>
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <div className="text-center">
+                    <div className={`text-5xl font-bold ${
+                      quizResults.percentage >= 80
+                        ? "text-green-600 dark:text-green-400"
+                        : quizResults.percentage >= 60
+                        ? "text-yellow-600 dark:text-yellow-400"
+                        : "text-blue-600 dark:text-blue-400"
+                    }`}>
+                      {quizResults.percentage}%
+                    </div>
+                    <div className="text-sm text-gray-500 dark:text-gray-400 font-medium">
+                      Score
+                    </div>
+                  </div>
                 </div>
               </div>
-              <div className="text-center p-6 bg-gray-50 dark:bg-gray-700 rounded-2xl">
-                <div className="text-4xl font-bold text-indigo-600 dark:text-indigo-400 mb-2">
-                  {quizResults.score}/{quizResults.totalQuestions}
+            </div>
+
+            {/* Stats Grid */}
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+              <div className="bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 p-6 rounded-2xl border-2 border-green-200 dark:border-green-800">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-3xl">✅</span>
+                  <span className="text-2xl font-bold text-green-600 dark:text-green-400">
+                    {quizResults.score}
+                  </span>
                 </div>
-                <div className="text-gray-600 dark:text-gray-300 font-medium">
+                <div className="text-sm font-medium text-gray-700 dark:text-gray-300">
                   Correct Answers
                 </div>
               </div>
-              <div className="text-center p-6 bg-gray-50 dark:bg-gray-700 rounded-2xl">
-                <div className="text-4xl font-bold text-blue-600 dark:text-blue-400 mb-2">
-                  {Math.floor(quizResults.timeSpent / 60)}:
-                  {(quizResults.timeSpent % 60).toString().padStart(2, "0")}
+
+              <div className="bg-gradient-to-br from-red-50 to-rose-50 dark:from-red-900/20 dark:to-rose-900/20 p-6 rounded-2xl border-2 border-red-200 dark:border-red-800">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-3xl">❌</span>
+                  <span className="text-2xl font-bold text-red-600 dark:text-red-400">
+                    {quizResults.totalQuestions - quizResults.score}
+                  </span>
                 </div>
-                <div className="text-gray-600 dark:text-gray-300 font-medium">
-                  Time Spent
+                <div className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                  Incorrect Answers
+                </div>
+              </div>
+
+              <div className="bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 p-6 rounded-2xl border-2 border-blue-200 dark:border-blue-800">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-3xl">⏱️</span>
+                  <span className="text-2xl font-bold text-blue-600 dark:text-blue-400">
+                    {Math.floor(quizResults.timeSpent / 60)}:{(quizResults.timeSpent % 60).toString().padStart(2, "0")}
+                  </span>
+                </div>
+                <div className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                  Time Taken
+                </div>
+              </div>
+
+              <div className="bg-gradient-to-br from-purple-50 to-pink-50 dark:from-purple-900/20 dark:to-pink-900/20 p-6 rounded-2xl border-2 border-purple-200 dark:border-purple-800">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-3xl">📊</span>
+                  <span className="text-2xl font-bold text-purple-600 dark:text-purple-400">
+                    {Math.round((quizResults.timeSpent / quizResults.totalQuestions))}s
+                  </span>
+                </div>
+                <div className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                  Avg per Question
                 </div>
               </div>
             </div>
 
-            {/* Progress Bar */}
-            <div className="mb-8">
-              <div className="flex justify-between items-center mb-2">
-                <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                  Progress
-                </span>
-                <span
-                  className={`text-sm font-medium ${
-                    quizResults.percentage >= 80
-                      ? "text-green-600 dark:text-green-400"
-                      : quizResults.percentage >= 60
-                      ? "text-yellow-600 dark:text-yellow-400"
-                      : "text-red-600 dark:text-red-400"
-                  }`}
-                >
-                  {quizResults.percentage}%
-                </span>
-              </div>
-              <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-3">
-                <div
-                  className={`h-3 rounded-full transition-all duration-1000 ${
-                    quizResults.percentage >= 80
-                      ? "bg-green-500"
-                      : quizResults.percentage >= 60
-                      ? "bg-yellow-500"
-                      : "bg-red-500"
-                  }`}
-                  style={{ width: `${quizResults.percentage}%` }}
-                ></div>
+            {/* Performance Insights */}
+            <div className="bg-gradient-to-r from-indigo-50 to-purple-50 dark:from-indigo-900/20 dark:to-purple-900/20 p-6 rounded-2xl border-2 border-indigo-200 dark:border-indigo-800 mb-8">
+              <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-4 flex items-center">
+                <span className="text-2xl mr-2">💡</span>
+                Performance Insights
+              </h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="flex items-start space-x-3">
+                  <span className="text-2xl">
+                    {quizResults.percentage >= 80 ? "🌟" : quizResults.percentage >= 60 ? "⭐" : "💫"}
+                  </span>
+                  <div>
+                    <div className="font-semibold text-gray-900 dark:text-white">
+                      {quizResults.percentage >= 80
+                        ? "Excellent Understanding"
+                        : quizResults.percentage >= 60
+                        ? "Good Grasp"
+                        : "Needs More Practice"}
+                    </div>
+                    <div className="text-sm text-gray-600 dark:text-gray-400">
+                      {quizResults.percentage >= 80
+                        ? "You've demonstrated mastery of this topic"
+                        : quizResults.percentage >= 60
+                        ? "You understand most concepts well"
+                        : "Review the material and try again"}
+                    </div>
+                  </div>
+                </div>
+                <div className="flex items-start space-x-3">
+                  <span className="text-2xl">🎯</span>
+                  <div>
+                    <div className="font-semibold text-gray-900 dark:text-white">
+                      Accuracy Rate
+                    </div>
+                    <div className="text-sm text-gray-600 dark:text-gray-400">
+                      {quizResults.score} out of {quizResults.totalQuestions} questions correct
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
 
             {/* Question Review */}
             <div className="mb-8">
-              <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">
-                Question Review
+              <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-6 flex items-center">
+                <span className="text-3xl mr-3">📝</span>
+                Detailed Review
               </h3>
-              <div className="space-y-4">
+              <div className="space-y-6">
                 {generatedQuiz.questions.map((question, index) => {
                   const userAnswer = quizResults.answers[question.id];
                   const isCorrect = userAnswer === question.correctAnswer;
@@ -901,51 +983,90 @@ Ensure the JSON is valid and complete.`;
                   return (
                     <div
                       key={question.id}
-                      className={`p-6 rounded-2xl border-2 transition-all duration-200 ${
+                      className={`relative overflow-hidden rounded-2xl border-2 transition-all duration-300 hover:shadow-xl ${
                         isCorrect
-                          ? "bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800"
-                          : "bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800"
+                          ? "bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 border-green-300 dark:border-green-700"
+                          : "bg-gradient-to-r from-red-50 to-rose-50 dark:from-red-900/20 dark:to-rose-900/20 border-red-300 dark:border-red-700"
                       }`}
                     >
-                      <div className="flex items-start justify-between mb-4">
-                        <h4 className="font-semibold text-gray-900 dark:text-white text-lg flex items-center">
-                          <span
-                            className={`w-8 h-8 rounded-full flex items-center justify-center text-white text-sm font-bold mr-3 ${
-                              isCorrect ? "bg-green-500" : "bg-red-500"
-                            }`}
-                          >
+                      {/* Status Badge */}
+                      <div className={`absolute top-0 right-0 px-4 py-2 rounded-bl-2xl text-white font-bold ${
+                        isCorrect ? "bg-green-500" : "bg-red-500"
+                      }`}>
+                        {isCorrect ? "✓ CORRECT" : "✗ INCORRECT"}
+                      </div>
+
+                      <div className="p-6 pt-12">
+                        {/* Question */}
+                        <div className="flex items-start mb-6">
+                          <div className={`flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center text-white font-bold text-lg mr-4 ${
+                            isCorrect ? "bg-green-500" : "bg-red-500"
+                          }`}>
                             {index + 1}
-                          </span>
-                          {question.question}
-                        </h4>
-                        <span
-                          className={`px-3 py-1 rounded-full text-sm font-medium ${
-                            isCorrect
-                              ? "bg-green-100 dark:bg-green-800 text-green-800 dark:text-green-200"
-                              : "bg-red-100 dark:bg-red-800 text-red-800 dark:text-red-200"
-                          }`}
-                        >
-                          {isCorrect ? "✓ Correct" : "✗ Incorrect"}
-                        </span>
-                      </div>
-
-                      <div className="space-y-2 mb-4">
-                        <div className="text-gray-700 dark:text-gray-300">
-                          <span className="font-medium">Your answer:</span>{" "}
-                          {userAnswer || "No answer"}
-                        </div>
-                        {!isCorrect && (
-                          <div className="text-green-700 dark:text-green-300">
-                            <span className="font-medium">Correct answer:</span>{" "}
-                            {question.correctAnswer}
                           </div>
-                        )}
-                      </div>
+                          <h4 className="font-bold text-gray-900 dark:text-white text-xl leading-relaxed">
+                            {question.question}
+                          </h4>
+                        </div>
 
-                      <div className="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-xl">
-                        <div className="text-blue-800 dark:text-blue-200">
-                          <span className="font-medium">Explanation:</span>{" "}
-                          {question.explanation}
+                        {/* Answers */}
+                        <div className="space-y-4 mb-6">
+                          {/* User's Answer */}
+                          <div className={`p-4 rounded-xl border-2 ${
+                            isCorrect
+                              ? "bg-green-100 dark:bg-green-900/30 border-green-400 dark:border-green-600"
+                              : "bg-red-100 dark:bg-red-900/30 border-red-400 dark:border-red-600"
+                          }`}>
+                            <div className="flex items-center justify-between">
+                              <div>
+                                <div className="text-sm font-semibold text-gray-600 dark:text-gray-400 mb-1">
+                                  Your Answer:
+                                </div>
+                                <div className={`font-semibold text-lg ${
+                                  isCorrect
+                                    ? "text-green-800 dark:text-green-200"
+                                    : "text-red-800 dark:text-red-200"
+                                }`}>
+                                  {userAnswer || "No answer provided"}
+                                </div>
+                              </div>
+                              <span className="text-3xl">
+                                {isCorrect ? "✅" : "❌"}
+                              </span>
+                            </div>
+                          </div>
+
+                          {/* Correct Answer (if wrong) */}
+                          {!isCorrect && (
+                            <div className="p-4 rounded-xl border-2 bg-green-100 dark:bg-green-900/30 border-green-400 dark:border-green-600">
+                              <div className="flex items-center justify-between">
+                                <div>
+                                  <div className="text-sm font-semibold text-gray-600 dark:text-gray-400 mb-1">
+                                    Correct Answer:
+                                  </div>
+                                  <div className="font-semibold text-lg text-green-800 dark:text-green-200">
+                                    {question.correctAnswer}
+                                  </div>
+                                </div>
+                                <span className="text-3xl">💡</span>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Explanation */}
+                        <div className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 p-5 rounded-xl border-2 border-blue-200 dark:border-blue-800">
+                          <div className="flex items-start">
+                            <span className="text-2xl mr-3">📚</span>
+                            <div>
+                              <div className="font-bold text-blue-900 dark:text-blue-200 mb-2">
+                                Explanation:
+                              </div>
+                              <div className="text-blue-800 dark:text-blue-300 leading-relaxed">
+                                {question.explanation}
+                              </div>
+                            </div>
+                          </div>
                         </div>
                       </div>
                     </div>
@@ -953,22 +1074,37 @@ Ensure the JSON is valid and complete.`;
                 })}
               </div>
             </div>
+          </div>
 
-            {/* Action Buttons */}
-            <div className="flex justify-center space-x-4">
-              <button
-                onClick={resetQuiz}
-                className="px-8 py-4 bg-indigo-600 dark:bg-indigo-500 text-white rounded-2xl hover:bg-indigo-700 dark:hover:bg-indigo-600 transition-all duration-200 font-bold text-lg shadow-lg"
-              >
-                🔄 Take Another Quiz
-              </button>
-              <button
-                onClick={() => setActiveTab("generate")}
-                className="px-8 py-4 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-2xl hover:bg-gray-200 dark:hover:bg-gray-600 transition-all duration-200 font-bold text-lg"
-              >
-                📝 Generate New Quiz
-              </button>
-            </div>
+          {/* Action Buttons */}
+          <div className="flex flex-col sm:flex-row justify-center gap-4 mb-8">
+            <button
+              onClick={resetQuiz}
+              className="group relative px-8 py-5 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-2xl hover:from-indigo-700 hover:to-purple-700 transition-all duration-300 font-bold text-lg shadow-2xl hover:shadow-3xl transform hover:-translate-y-1"
+            >
+              <span className="flex items-center justify-center">
+                <span className="text-2xl mr-3 group-hover:rotate-180 transition-transform duration-500">🔄</span>
+                Retake Quiz
+              </span>
+            </button>
+            <button
+              onClick={() => setActiveTab("generate")}
+              className="group px-8 py-5 bg-white dark:bg-gray-800 text-gray-900 dark:text-white border-2 border-gray-300 dark:border-gray-600 rounded-2xl hover:border-indigo-500 dark:hover:border-indigo-400 transition-all duration-300 font-bold text-lg shadow-lg hover:shadow-xl transform hover:-translate-y-1"
+            >
+              <span className="flex items-center justify-center">
+                <span className="text-2xl mr-3 group-hover:scale-110 transition-transform duration-300">📝</span>
+                Generate New Quiz
+              </span>
+            </button>
+            <button
+              onClick={() => window.print()}
+              className="group px-8 py-5 bg-gradient-to-r from-green-600 to-emerald-600 text-white rounded-2xl hover:from-green-700 hover:to-emerald-700 transition-all duration-300 font-bold text-lg shadow-2xl hover:shadow-3xl transform hover:-translate-y-1"
+            >
+              <span className="flex items-center justify-center">
+                <span className="text-2xl mr-3 group-hover:scale-110 transition-transform duration-300">🖨️</span>
+                Print Results
+              </span>
+            </button>
           </div>
         </div>
       )}

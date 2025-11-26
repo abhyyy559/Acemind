@@ -102,33 +102,64 @@ class StudyPlanService {
 
     if (daysUntilExam <= 0) return tasks
 
-    // Calculate study phases
+    // Comprehensive study phases with specific activities
     const phases = [
-      { name: 'Foundation', days: Math.floor(daysUntilExam * 0.4), focus: 'learning' },
-      { name: 'Practice', days: Math.floor(daysUntilExam * 0.4), focus: 'practice' },
-      { name: 'Revision', days: Math.floor(daysUntilExam * 0.2), focus: 'revision' }
+      { 
+        name: 'Foundation & Learning', 
+        days: Math.floor(daysUntilExam * 0.35), 
+        activities: ['Study', 'Read', 'Watch Lectures', 'Take Notes'],
+        description: 'Build strong fundamentals'
+      },
+      { 
+        name: 'Practice & Application', 
+        days: Math.floor(daysUntilExam * 0.25), 
+        activities: ['Practice Problems', 'Exercises', 'Hands-on Projects', 'Apply Concepts'],
+        description: 'Apply what you learned'
+      },
+      { 
+        name: 'Revision & Review', 
+        days: Math.floor(daysUntilExam * 0.20), 
+        activities: ['Review Notes', 'Revise Key Concepts', 'Summary Review', 'Flashcards'],
+        description: 'Reinforce your knowledge'
+      },
+      { 
+        name: 'Testing & Assessment', 
+        days: Math.floor(daysUntilExam * 0.15), 
+        activities: ['Practice Tests', 'Mock Exams', 'Timed Quizzes', 'Self-Assessment'],
+        description: 'Test your understanding'
+      },
+      { 
+        name: 'Final Recap & Exam Prep', 
+        days: Math.max(1, Math.floor(daysUntilExam * 0.05)), 
+        activities: ['Final Review', 'Quick Recap', 'Weak Areas Focus', 'Exam Strategy'],
+        description: 'Last-minute preparation'
+      }
     ]
 
     let currentDay = 0
     const targetDailyMinutes = input.daily_study_hours * 60
 
-    phases.forEach((phase) => {
+    phases.forEach((phase, phaseIndex) => {
       for (let day = 0; day < phase.days; day++) {
         const currentDate = new Date(today)
         currentDate.setDate(today.getDate() + currentDay)
         
         let dailyTimeAllocated = 0
+        const activityForDay = phase.activities[day % phase.activities.length]
 
         input.subjects.forEach((subject) => {
           if (dailyTimeAllocated >= targetDailyMinutes) return
 
-          // Calculate time allocation
+          // Calculate time allocation based on difficulty, priority, and phase
           const difficultyMultiplier = subject.difficulty === 'hard' ? 1.5 : subject.difficulty === 'easy' ? 0.7 : 1
           const priorityMultiplier = subject.priority === 'high' ? 1.3 : subject.priority === 'low' ? 0.8 : 1
           
+          // Adjust time based on phase (more time for learning, less for recap)
+          const phaseMultiplier = phaseIndex === 0 ? 1.2 : phaseIndex === 4 ? 0.6 : 1
+          
           const baseTime = targetDailyMinutes / input.subjects.length
           const adjustedTime = Math.min(
-            Math.round(baseTime * difficultyMultiplier * priorityMultiplier),
+            Math.round(baseTime * difficultyMultiplier * priorityMultiplier * phaseMultiplier),
             targetDailyMinutes - dailyTimeAllocated
           )
 
@@ -136,7 +167,7 @@ class StudyPlanService {
             tasks.push({
               study_plan_id: planId,
               subject: subject.name,
-              topic: subject.topic,
+              topic: `${activityForDay} - ${subject.topic}`,
               difficulty: subject.difficulty,
               priority: subject.priority,
               duration: adjustedTime,

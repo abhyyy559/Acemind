@@ -86,18 +86,32 @@ export default function Roadmap() {
         const blob = new Blob([htmlContent], { type: 'text/html' })
         const url = URL.createObjectURL(blob)
 
+        // Calculate window size based on screen
+        const screenWidth = window.screen.width
+        const screenHeight = window.screen.height
+        const windowWidth = Math.min(1600, screenWidth * 0.9)
+        const windowHeight = Math.min(1000, screenHeight * 0.9)
+        const left = (screenWidth - windowWidth) / 2
+        const top = (screenHeight - windowHeight) / 2
+
         const features = [
-          'width=1400',
-          'height=900',
+          `width=${windowWidth}`,
+          `height=${windowHeight}`,
+          `left=${left}`,
+          `top=${top}`,
           'scrollbars=yes',
           'resizable=yes',
-          'noopener',
-          'noreferrer'
+          'toolbar=no',
+          'menubar=no',
+          'location=no',
+          'status=no'
         ].join(',')
-        const newWindow = window.open(url, '_blank', features)
+        
+        const newWindow = window.open(url, 'Visual Roadmap', features)
 
         if (newWindow) {
-          setTimeout(() => URL.revokeObjectURL(url), 2000)
+          newWindow.focus()
+          setTimeout(() => URL.revokeObjectURL(url), 5000)
         } else {
           setError('Please allow popups for this site to view the visual roadmap')
         }
