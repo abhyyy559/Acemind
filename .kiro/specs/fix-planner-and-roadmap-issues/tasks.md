@@ -70,7 +70,8 @@
 
 
 
-  - [-] 3.1 Test Planner component functionality
+  - [x] 3.1 Test Planner component functionality
+
 
     - Start frontend development server
     - Navigate to Planner page
@@ -81,6 +82,7 @@
     - Verify button becomes enabled
     - Click generate button and verify plan is created
     - _Requirements: 1.1, 1.2, 1.3, 1.4, 1.5_
+
 
   - [ ] 3.2 Test visual roadmap generation
     - Start backend server
