@@ -36,7 +36,7 @@ interface MotivationalMessage {
 
 export default function Planner() {
   const { user } = useAuth()
-  const [activeTab, setActiveTab] = useState<'planner' | 'progress' | 'myplans'>('planner')
+  const [activeTab, setActiveTab] = useState<'planner' | 'progress' | 'myplans' | 'recap'>('planner')
   const [selectedDate, setSelectedDate] = useState(new Date())
   const [tasks, setTasks] = useState<StudyTask[]>([])
   const [studyPlans, setStudyPlans] = useState<StudyPlan[]>([])
@@ -92,6 +92,15 @@ export default function Planner() {
         setCurrentPlan(activePlan)
         const planTasks = await studyPlanService.getStudyTasks(activePlan.id)
         setTasks(planTasks)
+        
+        // Generate day plans from tasks
+        generateDayPlans(planTasks)
+        
+        // Calculate days until exam
+        const examDate = new Date(activePlan.exam_date)
+        const today = new Date()
+        const days = Math.ceil((examDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24))
+        setDaysUntilExam(days)
       }
     } catch (err) {
       console.error('Error loading planner data:', err)
@@ -169,6 +178,10 @@ export default function Planner() {
       
       setCurrentPlan(plan)
       setTasks(createdTasks)
+      
+      // Generate day plans from tasks
+      generateDayPlans(createdTasks)
+      
       setSuccessMessage(`Generated ${calculatedDays}-day study plan with ${createdTasks.length} tasks! ${calculatedDays} days until your exam!`)
       setActiveTab('progress')
       
@@ -183,6 +196,41 @@ export default function Planner() {
     } finally {
       setGeneratingPlan(false)
     }
+  }
+
+  // Generate day plans from tasks
+  const generateDayPlans = (tasksList: StudyTask[]) => {
+    const dayPlansMap = new Map<string, DayPlan>()
+    
+    tasksList.forEach(task => {
+      // Add computed title if not present
+      if (!task.title) {
+        task.title = `${task.subject}: ${task.topic}`
+      }
+      
+      const date = task.scheduled_date
+      if (!dayPlansMap.has(date)) {
+        dayPlansMap.set(date, {
+          date,
+          tasks: [],
+          totalHours: 0,
+          completed: 0
+        })
+      }
+      
+      const dayPlan = dayPlansMap.get(date)!
+      dayPlan.tasks.push(task)
+      dayPlan.totalHours += task.duration / 60
+      if (task.completed) {
+        dayPlan.completed++
+      }
+    })
+    
+    const plans = Array.from(dayPlansMap.values()).sort((a, b) => 
+      new Date(a.date).getTime() - new Date(b.date).getTime()
+    )
+    
+    setDayPlans(plans)
   }
 
   const downloadStudyPlan = () => {
@@ -244,7 +292,7 @@ export default function Planner() {
           return {
             ...dayPlan,
             tasks: [...dayPlan.tasks, task],
-            totalHours: dayPlan.totalHours + (task.estimatedDuration / 60)
+            totalHours: dayPlan.totalHours + (task.duration / 60)
           }
         }
       } else {
@@ -252,7 +300,7 @@ export default function Planner() {
         return {
           ...dayPlan,
           tasks: dayPlan.tasks.filter(t => t.id !== draggedTask),
-          totalHours: Math.max(0, dayPlan.totalHours - (task.estimatedDuration / 60))
+          totalHours: Math.max(0, dayPlan.totalHours - (task.duration / 60))
         }
       }
       return dayPlan
@@ -697,7 +745,7 @@ export default function Planner() {
                                 </h4>
                                 <div className="flex items-center space-x-2 mt-1">
                                   <span className="text-xs text-gray-500 dark:text-gray-400">
-                                    {Math.floor(task.estimatedDuration / 60)}h {task.estimatedDuration % 60}m
+                                    {Math.floor(task.duration / 60)}h {task.duration % 60}m
                                   </span>
                                   <span className={`px-2 py-1 rounded-full text-xs ${
                                     task.priority === 'high' ? 'bg-red-100 dark:bg-red-900 text-red-700 dark:text-red-300' :

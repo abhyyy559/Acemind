@@ -17,6 +17,7 @@ export interface StudyTask {
   study_plan_id: string
   subject: string
   topic: string
+  title?: string // Computed from subject and topic
   difficulty: 'easy' | 'moderate' | 'hard'
   priority: 'low' | 'medium' | 'high'
   duration: number // minutes
@@ -33,6 +34,7 @@ export interface CreateStudyPlanInput {
   daily_study_hours: number
   goals: string
   subjects: {
+    id: string // Client-side ID for UI management
     name: string
     topic: string
     difficulty: 'easy' | 'moderate' | 'hard'

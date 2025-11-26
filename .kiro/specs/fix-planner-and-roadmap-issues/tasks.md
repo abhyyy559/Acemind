@@ -64,7 +64,9 @@
     - Verify router is registered before running server
     - _Requirements: 2.4, 2.5_
 
-- [-] 3. Test and Validate Fixes
+- [x] 3. Test and Validate Fixes
+
+
 
 
 
@@ -84,7 +86,8 @@
     - _Requirements: 1.1, 1.2, 1.3, 1.4, 1.5_
 
 
-  - [ ] 3.2 Test visual roadmap generation
+  - [x] 3.2 Test visual roadmap generation
+
     - Start backend server
     - Navigate to Roadmap page
     - Enter a topic (e.g., "React Development")
