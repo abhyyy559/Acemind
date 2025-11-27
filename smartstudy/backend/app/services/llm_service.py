@@ -243,6 +243,18 @@ class LLMService:
         Returns:
             The HTML content as a string
         """
+        # Count nodes to optimize initial expand level
+        # Count headers (##) and list items (-) as nodes
+        header_count = len(re.findall(r'^#{1,6}\s', roadmap_markdown, re.MULTILINE))
+        list_item_count = len(re.findall(r'^\s*[-*]\s', roadmap_markdown, re.MULTILINE))
+        total_nodes = header_count + list_item_count
+        
+        # Set initial expand level based on node count
+        # Level 2 for <50 nodes, level 1 for >=50 nodes
+        initial_expand_level = 2 if total_nodes < 50 else 1
+        
+        logging.info(f"📊 Roadmap stats: {total_nodes} nodes (headers: {header_count}, items: {list_item_count}), expand level: {initial_expand_level}")
+        
         # Escape the markdown content for JavaScript
         escaped_markdown = json.dumps(roadmap_markdown)
         
@@ -525,7 +537,7 @@ class LLMService:
                         }},
                         duration: 300,
                         maxWidth: 280,
-                        initialExpandLevel: 2
+                        initialExpandLevel: {initial_expand_level}
                     }}, data);
                     
                     mm.fit();

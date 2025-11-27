@@ -90,7 +90,9 @@
   - _Requirements: 1.2_
 -
 
-- [-] 5. Implement node interaction functionality
+- [x] 5. Implement node interaction functionality
+
+
 
 
   - Verify Markmap handles click events for expand/collapse (built-in functionality)
@@ -99,6 +101,8 @@
   - Verify color coding by depth level works correctly
   - Verify text rendering with 12-16px font size
   - _Requirements: 2.1, 2.2, 2.3, 2.4, 8.2_
+
+
 
 - [ ] 6. Optimize performance for large roadmaps
 
@@ -119,6 +123,8 @@
   - Test `convert_to_markmap()` with basic markdown
   - Test markdown escaping with special characters (quotes, backslashes)
   - Test API endpoint with valid request
+
+
   - Test API endpoint response headers and status code
   - _Requirements: 5.1, 5.2, 5.3, 5.4, 5.5_
 
