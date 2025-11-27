@@ -260,10 +260,11 @@ class LLMService:
         }}
         
         body {{
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            background: linear-gradient(135deg, #0d1117 0%, #161b22 50%, #21262d 100%);
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #0d1117;
             min-height: 100vh;
             color: #e6edf3;
+            overflow: hidden;
         }}
         
         .container {{
@@ -282,7 +283,7 @@ class LLMService:
         
         .header {{
             background: linear-gradient(135deg, #1f2937 0%, #374151 100%);
-            color: #f9fafb;
+            color: #e6edf3;
             padding: 24px 32px;
             text-align: center;
             position: relative;
@@ -302,9 +303,9 @@ class LLMService:
         
         .header p {{
             margin: 12px 0 0 0;
-            opacity: 0.8;
             font-size: 0.9rem;
-            color: #d1d5db;
+            color: #e6edf3;
+            opacity: 0.85;
         }}
         
         .mindmap-container {{
@@ -320,42 +321,83 @@ class LLMService:
         }}
         
         .controls {{
-            padding: 16px 24px;
-            background: rgba(21, 26, 33, 0.9);
-            border-top: 1px solid rgba(240, 246, 252, 0.1);
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 1000;
             display: flex;
-            justify-content: center;
-            gap: 12px;
-            flex-wrap: wrap;
-            flex-shrink: 0;
+            flex-direction: column;
+            gap: 10px;
         }}
         
         .btn {{
-            background: rgba(30, 41, 59, 0.8);
-            color: #e2e8f0;
-            border: 1px solid rgba(240, 246, 252, 0.2);
-            padding: 12px 16px;
-            border-radius: 8px;
+            background: #21262d;
+            color: #e6edf3;
+            border: 1px solid #30363d;
+            padding: 10px 16px;
+            border-radius: 6px;
             cursor: pointer;
-            font-size: 13px;
+            font-size: 14px;
             font-weight: 500;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
             transition: all 0.2s ease;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
         }}
         
         .btn:hover {{
-            background: rgba(51, 65, 85, 0.9);
-            border-color: rgba(240, 246, 252, 0.3);
+            background: #30363d;
+            border-color: #484f58;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
             transform: translateY(-1px);
         }}
         
-        .btn.success {{
-            background: #059669;
-            border-color: #059669;
-            color: white;
+        .btn:active {{
+            transform: translateY(0) scale(0.98);
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
         }}
         
-        .btn.success:hover {{
-            background: #047857;
+        .btn:focus {{
+            outline: 2px solid #3b82f6;
+            outline-offset: 2px;
+        }}
+        
+        /* Markmap Node Styling - Dark Theme */
+        .markmap-node {{
+            cursor: pointer;
+        }}
+        
+        .markmap-node circle {{
+            stroke-width: 2px;
+            transition: all 0.2s ease;
+        }}
+        
+        .markmap-node:hover circle {{
+            stroke-width: 3px;
+            filter: brightness(1.2);
+        }}
+        
+        .markmap-node text {{
+            fill: #e6edf3;
+            font-size: 14px;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            font-weight: 500;
+        }}
+        
+        /* Markmap Link Styling - Dark Theme */
+        .markmap-link {{
+            stroke-width: 2px;
+            opacity: 0.6;
+            transition: opacity 0.2s ease;
+        }}
+        
+        .markmap-node:hover ~ .markmap-link,
+        .markmap-link:hover {{
+            opacity: 0.9;
+        }}
+        
+        /* SVG Background for better contrast */
+        #mindmap {{
+            background: #0d1117;
         }}
         
         .loading {{
@@ -368,6 +410,7 @@ class LLMService:
             padding: 24px;
             border-radius: 12px;
             z-index: 100;
+            color: #e6edf3;
         }}
         
         .spinner {{
@@ -385,28 +428,6 @@ class LLMService:
             100% {{ transform: rotate(360deg); }}
         }}
         
-        .toast {{
-            position: fixed;
-            top: 24px;
-            right: 24px;
-            background: #059669;
-            color: white;
-            padding: 12px 20px;
-            border-radius: 8px;
-            transform: translateX(400px);
-            transition: transform 0.3s ease;
-            z-index: 1000;
-            font-size: 14px;
-        }}
-        
-        .toast.show {{
-            transform: translateX(0);
-        }}
-        
-        .toast.error {{
-            background: #dc2626;
-        }}
-        
         /* Print Styles */
         @media print {{
             body {{
@@ -422,6 +443,10 @@ class LLMService:
             }}
             
             .controls {{
+                display: none !important;
+            }}
+            
+            .controls button {{
                 display: none !important;
             }}
             
@@ -445,8 +470,8 @@ class LLMService:
                 background: white;
             }}
             
-            .toast {{
-                display: none !important;
+            .markmap-node text {{
+                fill: #1f2937;
             }}
             
             .loading {{
@@ -459,6 +484,14 @@ class LLMService:
     <script src="https://cdn.jsdelivr.net/npm/markmap-view@0.15.3/dist/browser/index.js"></script>
 </head>
 <body>
+    <!-- Control Buttons -->
+    <div class="controls">
+        <button class="btn" onclick="expandAll()">📂 Expand All</button>
+        <button class="btn" onclick="collapseAll()">📁 Collapse All</button>
+        <button class="btn" onclick="fitScreen()">🔍 Fit Screen</button>
+        <button class="btn" onclick="downloadHTML()">💾 Download HTML</button>
+    </div>
+    
     <div class="container">
         <div class="header">
             <h1>🎯 Interactive Learning Roadmap</h1>
@@ -470,12 +503,6 @@ class LLMService:
                 <div class="spinner"></div>
                 <div>Loading...</div>
             </div>
-        </div>
-        <div class="controls">
-            <button class="btn" onclick="fitScreen()">🔍 Fit Screen</button>
-            <button class="btn" onclick="expandAll()">📖 Expand All</button>
-            <button class="btn" onclick="collapseAll()">📚 Collapse All</button>
-            <button class="btn success" onclick="downloadHTML()">⬇️ Download HTML</button>
         </div>
     </div>
 
@@ -493,8 +520,8 @@ class LLMService:
                     
                     mm = window.markmap.Markmap.create('#mindmap', {{
                         color: function(node) {{
-                            var colors = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#06b6d4'];
-                            return colors[node.depth % 6];
+                            var colors = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6'];
+                            return colors[node.depth % 5];
                         }},
                         duration: 300,
                         maxWidth: 280,
@@ -503,7 +530,6 @@ class LLMService:
                     
                     mm.fit();
                     document.getElementById('loading').style.display = 'none';
-                    showToast('Loaded!');
                 }} catch(e) {{
                     console.error(e);
                     document.getElementById('loading').style.display = 'none';
@@ -518,46 +544,25 @@ class LLMService:
         function expandAll() {{
             if (!mm) return;
             
-            showToast('Expanding all nodes...');
-            
             var transformer = new window.markmap.Transformer();
             var data = transformer.transform(markdown).root;
             
-            function forceExpandEverything(node) {{
+            // Recursively set fold=0 on all nodes
+            function forceExpand(node) {{
                 if (node.payload) {{
                     delete node.payload.fold;
                 }}
-                
                 node.payload = node.payload || {{}};
                 node.payload.fold = 0;
                 
                 if (node.children) {{
-                    for (var i = 0; i < node.children.length; i++) {{
-                        forceExpandEverything(node.children[i]);
-                    }}
+                    node.children.forEach(forceExpand);
                 }}
             }}
             
-            forceExpandEverything(data);
+            forceExpand(data);
             mm.setData(data);
-            
-            setTimeout(function() {{
-                var circles = document.querySelectorAll('.markmap-node circle');
-                circles.forEach(function(circle) {{
-                    var event = new MouseEvent('click', {{
-                        bubbles: true,
-                        cancelable: true,
-                        view: window
-                    }});
-                    circle.dispatchEvent(event);
-                    circle.dispatchEvent(event);
-                }});
-                
-                setTimeout(function() {{
-                    mm.fit();
-                    showToast('All nodes expanded!');
-                }}, 300);
-            }}, 200);
+            mm.fit();
         }}
         
         function collapseAll() {{
@@ -566,102 +571,36 @@ class LLMService:
             var transformer = new window.markmap.Transformer();
             var data = transformer.transform(markdown).root;
             
-            function foldAllNodes(node, isRoot) {{
+            // Set fold=1 on all non-root nodes
+            function foldAll(node, isRoot) {{
                 if (!isRoot) {{
                     node.payload = node.payload || {{}};
                     node.payload.fold = 1;
                 }}
-                
-                if (node.children && node.children.length > 0) {{
-                    for (var i = 0; i < node.children.length; i++) {{
-                        foldAllNodes(node.children[i], false);
-                    }}
+                if (node.children) {{
+                    node.children.forEach(child => foldAll(child, false));
                 }}
             }}
             
-            foldAllNodes(data, true);
+            foldAll(data, true);
             mm.setData(data);
-            
-            setTimeout(function() {{
-                mm.fit();
-                showToast('All nodes collapsed!');
-            }}, 100);
+            mm.fit();
         }}
         
         function downloadHTML() {{
-            try {{
-                showToast('Creating HTML file...');
-                
-                // Get the current HTML
-                var htmlContent = '<!DOCTYPE html>\\n<html lang="en">\\n';
-                htmlContent += document.head.outerHTML;
-                htmlContent += '<body>\\n';
-                htmlContent += document.querySelector('.container').outerHTML;
-                
-                // Add print-friendly script
-                htmlContent += '<script>';
-                htmlContent += 'var mm; var markdown = {escaped_markdown};';
-                htmlContent += 'function init() {{';
-                htmlContent += '  setTimeout(function() {{';
-                htmlContent += '    try {{';
-                htmlContent += '      var transformer = new window.markmap.Transformer();';
-                htmlContent += '      var data = transformer.transform(markdown).root;';
-                htmlContent += '      mm = window.markmap.Markmap.create("#mindmap", {{';
-                htmlContent += '        color: function(node) {{ var colors = ["#3b82f6", "#10b981", "#f59e0b", "#ef4444", "#8b5cf6", "#06b6d4"]; return colors[node.depth % 6]; }},';
-                htmlContent += '        duration: 300, maxWidth: 280, initialExpandLevel: 2';
-                htmlContent += '      }}, data);';
-                htmlContent += '      mm.fit();';
-                htmlContent += '    }} catch(e) {{ console.error(e); }}';
-                htmlContent += '  }}, 100);';
-                htmlContent += '}}';
-                htmlContent += 'function fitScreen() {{ if (mm) mm.fit(); }}';
-                htmlContent += 'function expandAll() {{ if (mm) {{ var transformer = new window.markmap.Transformer(); var data = transformer.transform(markdown).root; mm.setData(data); setTimeout(function() {{ mm.fit(); }}, 100); }} }}';
-                htmlContent += 'function collapseAll() {{ if (mm) {{ var transformer = new window.markmap.Transformer(); var data = transformer.transform(markdown).root; mm.setData(data); setTimeout(function() {{ mm.fit(); }}, 100); }} }}';
-                htmlContent += 'init();';
-                htmlContent += '</script>';
-                
-                htmlContent += '\\n</body>\\n</html>';
-                
-                // Replace download button with print button
-                htmlContent = htmlContent.replace(
-                    'onclick="downloadHTML()"',
-                    'onclick="window.print()"'
-                ).replace(
-                    '⬇️ Download HTML',
-                    '🖨️ Print'
-                );
-                
-                // Create and download
-                var blob = new Blob([htmlContent], {{type: 'text/html;charset=utf-8'}});
-                var url = URL.createObjectURL(blob);
-                var a = document.createElement('a');
-                a.href = url;
-                a.download = 'learning-roadmap-' + new Date().toISOString().split('T')[0] + '.html';
-                document.body.appendChild(a);
-                a.click();
-                document.body.removeChild(a);
-                
-                setTimeout(function() {{
-                    URL.revokeObjectURL(url);
-                }}, 100);
-                
-                showToast('HTML file downloaded successfully!');
-            }} catch(e) {{
-                console.error('Download error:', e);
-                showToast('Download failed: ' + e.message, true);
-            }}
-        }}
-        
-        function showToast(msg, error) {{
-            var toast = document.createElement('div');
-            toast.className = 'toast' + (error ? ' error' : '');
-            toast.textContent = msg;
-            document.body.appendChild(toast);
-            setTimeout(function() {{ toast.classList.add('show'); }}, 100);
-            setTimeout(function() {{
-                toast.classList.remove('show');
-                setTimeout(function() {{ toast.remove(); }}, 300);
-            }}, 2000);
+            // Get complete HTML document
+            var fullHTML = document.documentElement.outerHTML;
+            
+            // Create blob and download with date-stamped filename
+            var blob = new Blob([fullHTML], {{ type: 'text/html;charset=utf-8' }});
+            var url = URL.createObjectURL(blob);
+            var a = document.createElement('a');
+            a.href = url;
+            a.download = 'mindmap-' + new Date().toISOString().split('T')[0] + '.html';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
         }}
         
         init();

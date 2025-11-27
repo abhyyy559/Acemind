@@ -79,39 +79,25 @@ export default function Roadmap() {
         topic: topic,
         difficulty_level: difficultyLevel,
         roadmap_markdown: roadmapData.roadmap_markdown || ''
+      }, {
+        responseType: 'text'  // Important: Tell axios to expect HTML text, not JSON
       })
       
       if (response.status === 200 && response.data) {
         const htmlContent = response.data
+        // Create Blob with HTML content
         const blob = new Blob([htmlContent], { type: 'text/html' })
+        
+        // Create temporary URL using URL.createObjectURL
         const url = URL.createObjectURL(blob)
 
-        // Calculate window size based on screen
-        const screenWidth = window.screen.width
-        const screenHeight = window.screen.height
-        const windowWidth = Math.min(1600, screenWidth * 0.9)
-        const windowHeight = Math.min(1000, screenHeight * 0.9)
-        const left = (screenWidth - windowWidth) / 2
-        const top = (screenHeight - windowHeight) / 2
-
-        const features = [
-          `width=${windowWidth}`,
-          `height=${windowHeight}`,
-          `left=${left}`,
-          `top=${top}`,
-          'scrollbars=yes',
-          'resizable=yes',
-          'toolbar=no',
-          'menubar=no',
-          'location=no',
-          'status=no'
-        ].join(',')
-        
-        const newWindow = window.open(url, 'Visual Roadmap', features)
+        // Open URL in new window with dimensions 1200x800
+        const newWindow = window.open(url, 'Visual Roadmap', 'width=1200,height=800')
 
         if (newWindow) {
           newWindow.focus()
-          setTimeout(() => URL.revokeObjectURL(url), 5000)
+          // Revoke URL after 2 seconds for memory cleanup
+          setTimeout(() => URL.revokeObjectURL(url), 2000)
         } else {
           setError('Please allow popups for this site to view the visual roadmap')
         }

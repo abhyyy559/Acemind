@@ -27,6 +27,11 @@ class RoadmapRequest(BaseModel):
     difficulty_level: str
     roadmap_markdown: Optional[str] = ""
 
+class VisualRoadmapRequest(BaseModel):
+    topic: str
+    difficulty_level: str
+    roadmap_markdown: str = ""
+
 class RoadmapResponse(BaseModel):
     topic: str
     roadmap_markdown: str
@@ -38,16 +43,15 @@ def generate_visual_html(topic: str, roadmap_markdown: str, difficulty_level: st
     """Generate valid HTML with mind map visualization using dark theme"""
     
     # Properly escape markdown content for JavaScript
-    # Replace backslashes first, then quotes, then newlines
     escaped_markdown = (roadmap_markdown
-                       .replace('\\', '\\\\')  # Escape backslashes
-                       .replace('"', '\\"')     # Escape double quotes
-                       .replace("'", "\\'")     # Escape single quotes
-                       .replace('\n', '\\n')    # Escape newlines
-                       .replace('\r', '\\r')    # Escape carriage returns
-                       .replace('\t', '\\t'))   # Escape tabs
+                       .replace('\\', '\\\\')
+                       .replace('"', '\\"')
+                       .replace('\n', '\\n')
+                       .replace('\r', '\\r')
+                       .replace('\t', '\\t'))
     
-    html_template = f'''<!DOCTYPE html>
+    # Generate complete HTML with inline JavaScript
+    html_content = f'''<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -359,7 +363,7 @@ def generate_visual_html(topic: str, roadmap_markdown: str, difficulty_level: st
 </body>
 </html>'''
     
-    return html_template
+    return html_content
 
 
 @router.post("/generate", response_model=RoadmapResponse)
@@ -513,23 +517,19 @@ def _estimate_duration(roadmap_markdown: str, difficulty_level: str) -> str:
     return f"{base_weeks}-{base_weeks + 4} weeks"
 
 @router.post("/generate-visual-roadmap")
-async def generate_visual_roadmap(request: RoadmapRequest):
+async def generate_visual_roadmap(request: VisualRoadmapRequest):
     """Generate interactive HTML mind map visualization"""
     try:
-        # Validate topic is not empty
-        if not request.topic or not request.topic.strip():
-            raise HTTPException(status_code=400, detail="Topic is required")
+        # Validate that we have markdown content
+        if not request.roadmap_markdown or not request.roadmap_markdown.strip():
+            raise HTTPException(status_code=400, detail="roadmap_markdown is required")
         
-        # Generate HTML content
-        html_content = generate_visual_html(
-            topic=request.topic,
-            roadmap_markdown=request.roadmap_markdown,
-            difficulty_level=request.difficulty_level
-        )
+        # Convert markdown to Markmap HTML using llm_service
+        html_content = llm_service.convert_to_markmap(request.roadmap_markdown)
         
         logger.info(f"Generated visual roadmap for topic: {request.topic}")
         
-        return HTMLResponse(content=html_content)
+        return HTMLResponse(content=html_content, media_type="text/html", status_code=200)
         
     except HTTPException:
         raise
