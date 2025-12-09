@@ -10,7 +10,6 @@ interface AuthContextType {
   signIn: (email: string, password: string) => Promise<any>
   signOut: () => Promise<void>
   signInWithGoogle: () => Promise<any>
-  signInWithGitHub: () => Promise<any>
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
@@ -48,7 +47,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     signIn: authHelpers.signIn,
     signOut: authHelpers.signOut,
     signInWithGoogle: authHelpers.signInWithGoogle,
-    signInWithGitHub: authHelpers.signInWithGitHub,
   }
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>

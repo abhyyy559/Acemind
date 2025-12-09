@@ -60,17 +60,7 @@ export const authHelpers = {
     return { data, error }
   },
 
-  // Sign in with GitHub
-  signInWithGitHub: async () => {
-    const redirectUrl = import.meta.env.VITE_APP_URL || window.location.origin
-    const { data, error } = await supabase.auth.signInWithOAuth({
-      provider: 'github',
-      options: {
-        redirectTo: `${redirectUrl}/roadmap`
-      }
-    })
-    return { data, error }
-  }
+
 }
 
 // Database helper functions
