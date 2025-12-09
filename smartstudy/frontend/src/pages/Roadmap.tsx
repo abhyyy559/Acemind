@@ -40,7 +40,7 @@ export default function Roadmap() {
     setError('')
 
     try {
-      const response = await fetch('http://localhost:4000/roadmap/generate', {
+      const response = await fetch(`${import.meta.env.VITE_API_URL || 'https://acemind.onrender.com'}/roadmap/generate`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -75,7 +75,7 @@ export default function Roadmap() {
 
     try {
       setIsGeneratingVisual(true)
-      const response = await axios.post('http://localhost:4000/roadmap/generate-visual-roadmap', {
+      const response = await axios.post(`${import.meta.env.VITE_API_URL || 'https://acemind.onrender.com'}/roadmap/generate-visual-roadmap`, {
         topic: topic,
         difficulty_level: difficultyLevel,
         roadmap_markdown: roadmapData.roadmap_markdown || ''

@@ -50,10 +50,11 @@ export const authHelpers = {
 
   // Sign in with Google
   signInWithGoogle: async () => {
+    const redirectUrl = import.meta.env.VITE_APP_URL || window.location.origin
     const { data, error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
-        redirectTo: `${window.location.origin}/auth/callback`
+        redirectTo: `${redirectUrl}/roadmap`
       }
     })
     return { data, error }
@@ -61,10 +62,11 @@ export const authHelpers = {
 
   // Sign in with GitHub
   signInWithGitHub: async () => {
+    const redirectUrl = import.meta.env.VITE_APP_URL || window.location.origin
     const { data, error } = await supabase.auth.signInWithOAuth({
       provider: 'github',
       options: {
-        redirectTo: `${window.location.origin}/auth/callback`
+        redirectTo: `${redirectUrl}/roadmap`
       }
     })
     return { data, error }

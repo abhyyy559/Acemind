@@ -15,7 +15,7 @@ export interface ApiError {
 export class ApiClient {
   private baseURL: string
 
-  constructor(baseURL: string = 'http://localhost:4000') {
+  constructor(baseURL: string = import.meta.env.VITE_API_URL || 'https://acemind.onrender.com') {
     this.baseURL = baseURL
   }
 

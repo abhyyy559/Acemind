@@ -233,7 +233,7 @@ const EnhancedQuiz: React.FC = () => {
         formData.append("num_questions", numQuestions.toString());
 
         const response = await fetch(
-          "http://localhost:4000/quiz/v2/generate-from-url-fast",
+          `${import.meta.env.VITE_API_URL || 'https://acemind.onrender.com'}/quiz/v2/generate-from-url-fast`,
           {
             method: "POST",
             body: formData,
@@ -284,7 +284,7 @@ const EnhancedQuiz: React.FC = () => {
         formData.append("num_questions", numQuestions.toString());
 
         const response = await fetch(
-          "http://localhost:4000/quiz/v2/generate-from-pdf-fast",
+          `${import.meta.env.VITE_API_URL || 'https://acemind.onrender.com'}/quiz/v2/generate-from-pdf-fast`,
           {
             method: "POST",
             body: formData,
@@ -326,7 +326,7 @@ const EnhancedQuiz: React.FC = () => {
 
       // For text input, use the fast V2 endpoint
       const response = await fetch(
-        "http://localhost:4000/quiz/v2/generate-fast",
+        `${import.meta.env.VITE_API_URL || 'https://acemind.onrender.com'}/quiz/v2/generate-fast`,
         {
           method: "POST",
           headers: {

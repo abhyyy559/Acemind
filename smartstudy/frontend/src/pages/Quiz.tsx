@@ -96,7 +96,7 @@ Format your response as a JSON array with this structure:
 Ensure the JSON is valid and complete.`;
 
       // Call DeepSeek API
-      const response = await fetch("http://localhost:4000/quiz/generate-deepseek", {
+      const response = await fetch(`${import.meta.env.VITE_API_URL || 'https://acemind.onrender.com'}/quiz/generate-deepseek`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
