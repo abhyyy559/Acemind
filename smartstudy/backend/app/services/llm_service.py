@@ -25,7 +25,11 @@ class LLMService:
         self.local_llm_model = os.getenv("LOCAL_LLM_MODEL", "deepseek-coder-v2:latest")
         self.use_local_llm = True  # Always use Ollama as primary
 
-        # Gemini API configuration
+        # DeepSeek API configuration - SECONDARY
+        self.deepseek_api_key = os.getenv("DEEPSEEK_API_KEY", "")
+        self.deepseek_base_url = os.getenv("DEEPSEEK_BASE_URL", "https://api.deepseek.com/v1")
+        
+        # Gemini API configuration - TERTIARY
         self.api_key = os.getenv("GEMINI_API_KEY", "")
         self.model_name = os.getenv("GEMINI_MODEL", "gemini-pro")  # Use the standard model
         
@@ -97,7 +101,7 @@ class LLMService:
 
         # Always use Ollama as primary (already set to True in __init__)
         logging.info(
-            f"LLMService initialized. Gemini API: {bool(self.api_key)}, Local LLM (Ollama): {self.use_local_llm} ({self.local_llm_model} @ {self.local_llm_base_url})"
+            f"LLMService initialized. Ollama: {self.use_local_llm}, DeepSeek API: {bool(self.deepseek_api_key)}, Gemini API: {bool(self.api_key)}"
         )
 
     def generate_roadmap(self, topic: str, difficulty_level: str = "beginner") -> str:
@@ -142,13 +146,73 @@ class LLMService:
                 return content
             except Exception as e:
                 logging.error(f"❌ Ollama call failed: {e}")
-                if self.api_key:
+                # Try DeepSeek API first, then Gemini
+                if self.deepseek_api_key:
+                    logging.info("🔄 Falling back to DeepSeek API")
+                    return self._generate_with_deepseek(topic, prompt)
+                elif self.api_key:
                     logging.info("🔄 Falling back to Gemini API")
                     return self._generate_with_gemini(topic, prompt)
                 return self._get_fallback_roadmap(topic)
 
-        # Gemini API as fallback (only if Ollama fails)
+        # Try DeepSeek API, then Gemini as fallback (only if Ollama is disabled)
+        if self.deepseek_api_key:
+            return self._generate_with_deepseek(topic, prompt)
         return self._generate_with_gemini(topic, prompt)
+    
+    def _generate_with_deepseek(self, topic: str, prompt: str) -> str:
+        """Generate roadmap using DeepSeek API."""
+        try:
+            if not self.deepseek_api_key:
+                logging.warning("⚠️ DEEPSEEK_API_KEY is not set, trying Gemini")
+                if self.api_key:
+                    return self._generate_with_gemini(topic, prompt)
+                return self._get_fallback_roadmap(topic)
+            
+            logging.info(f"🔄 Generating roadmap with DeepSeek for topic: {topic}")
+            
+            headers = {
+                "Authorization": f"Bearer {self.deepseek_api_key}",
+                "Content-Type": "application/json"
+            }
+            
+            payload = {
+                "model": "deepseek-chat",
+                "messages": [
+                    {"role": "user", "content": prompt}
+                ],
+                "temperature": 0.7,
+                "max_tokens": 2048
+            }
+            
+            response = requests.post(
+                f"{self.deepseek_base_url}/chat/completions",
+                headers=headers,
+                json=payload,
+                timeout=60
+            )
+            
+            response.raise_for_status()
+            data = response.json()
+            
+            content = data.get("choices", [{}])[0].get("message", {}).get("content", "")
+            
+            if not content or len(content.strip()) < 100:
+                logging.warning("⚠️ DeepSeek returned empty/short content, trying Gemini")
+                if self.api_key:
+                    return self._generate_with_gemini(topic, prompt)
+                return self._get_fallback_roadmap(topic)
+            
+            logging.info(f"✅ Successfully generated roadmap with DeepSeek ({len(content)} chars)")
+            return content
+            
+        except Exception as e:
+            logging.error(f"❌ DeepSeek API error: {e}")
+            # Try Gemini as final fallback
+            if self.api_key:
+                logging.info("🔄 Falling back to Gemini API")
+                return self._generate_with_gemini(topic, prompt)
+            return self._get_fallback_roadmap(topic)
     
     def _generate_with_gemini(self, topic: str, prompt: str) -> str:
         """Generate roadmap using Gemini API as fallback."""
