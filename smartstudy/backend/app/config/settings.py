@@ -31,13 +31,27 @@ class Settings(BaseSettings):
     # Environment Configuration
     ENVIRONMENT: str = "development"
     
-    # CORS Configuration
-    ALLOWED_ORIGINS: List[str] = [
-        "http://localhost:3000",
-        "http://127.0.0.1:3000",
-        "https://acemind-study.vercel.app",
-        "https://acemind-study.vercel.app/"
-    ]
+    # CORS Configuration - Dynamic based on environment
+    def get_allowed_origins(self) -> List[str]:
+        """Get CORS origins based on environment"""
+        base_origins = [
+            "http://localhost:3000",
+            "http://127.0.0.1:3000",
+            "http://localhost:5173",  # Vite dev server
+        ]
+        
+        # Add production origins
+        production_origins = [
+            "https://acemind-study.vercel.app",
+            "https://acemind-study.vercel.app/",
+        ]
+        
+        # In production, include both dev and prod origins for flexibility
+        return base_origins + production_origins
+    
+    @property
+    def ALLOWED_ORIGINS(self) -> List[str]:
+        return self.get_allowed_origins()
     CORS_ORIGINS: str = ""  # Comma-separated string for custom environments
     CORS_DEBUG: bool = True
     

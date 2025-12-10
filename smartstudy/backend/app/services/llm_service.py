@@ -20,14 +20,24 @@ class LLMService:
         """
         Initializes the LLMService, configuring the Gemini API and model.
         """
-        # Local LLM (Ollama) configuration - PRIMARY
-        self.local_llm_base_url = os.getenv("LOCAL_LLM_BASE_URL", "http://localhost:11434")
-        self.local_llm_model = os.getenv("LOCAL_LLM_MODEL", "deepseek-coder-v2:latest")
-        self.use_local_llm = True  # Always use Ollama as primary
-
-        # DeepSeek API configuration - SECONDARY
+        # DeepSeek API configuration - PRIMARY (if available)
         self.deepseek_api_key = os.getenv("DEEPSEEK_API_KEY", "")
         self.deepseek_base_url = os.getenv("DEEPSEEK_BASE_URL", "https://api.deepseek.com/v1")
+        
+        # Local LLM (Ollama) configuration - SECONDARY (for local dev)
+        self.local_llm_base_url = os.getenv("LOCAL_LLM_BASE_URL", "http://localhost:11434")
+        self.local_llm_model = os.getenv("LOCAL_LLM_MODEL", "deepseek-coder-v2:latest")
+        
+        # Smart priority based on environment
+        # Development: Ollama first (free, fast local)
+        # Production: DeepSeek first (reliable cloud API)
+        is_production = os.getenv("ENVIRONMENT", "development") == "production"
+        has_deepseek = self.deepseek_api_key and self.deepseek_api_key.strip()
+        
+        if is_production and has_deepseek:
+            self.use_local_llm = False  # Use DeepSeek in production
+        else:
+            self.use_local_llm = True   # Use Ollama in development
         
         # Gemini API configuration - TERTIARY
         self.api_key = os.getenv("GEMINI_API_KEY", "")
@@ -100,8 +110,10 @@ class LLMService:
                 self.api_key = None  # Invalidate the key if it doesn't work
 
         # Always use Ollama as primary (already set to True in __init__)
+        env = os.getenv("ENVIRONMENT", "development")
         logging.info(
-            f"LLMService initialized. Ollama: {self.use_local_llm}, DeepSeek API: {bool(self.deepseek_api_key)}, Gemini API: {bool(self.api_key)}"
+            f"LLMService initialized [{env.upper()}]. Primary: {'Ollama' if self.use_local_llm else 'DeepSeek'}, "
+            f"DeepSeek: {bool(self.deepseek_api_key)}, Gemini: {bool(self.api_key)}"
         )
 
     def generate_roadmap(self, topic: str, difficulty_level: str = "beginner") -> str:
@@ -117,8 +129,17 @@ class LLMService:
         """
         prompt = self._create_roadmap_prompt(topic, difficulty_level)
         
-        # Prefer local LLM endpoint (Ollama) - Primary choice
-        if self.use_local_llm:
+        # Priority 1: DeepSeek API (if available)
+        if self.deepseek_api_key and self.deepseek_api_key.strip():
+            try:
+                logging.info(f"🤖 Generating roadmap via DeepSeek API for: {topic}")
+                return self._generate_with_deepseek(topic, prompt)
+            except Exception as e:
+                logging.error(f"❌ DeepSeek API call failed: {e}")
+                logging.info("🔄 Falling back to Ollama")
+        
+        # Priority 2: Ollama (local development)
+        if True:  # Always try Ollama as fallback
             try:
                 logging.info(f"🤖 Generating roadmap via Ollama '{self.local_llm_model}' for: {topic}")
                 resp = requests.post(
@@ -733,6 +754,46 @@ Use this exact structure with 4-6 points per section:
 
 Be specific with tool names and versions. Focus on {current_year} best practices.'''
         return prompt
+
+    def _generate_with_deepseek(self, topic: str, prompt: str) -> str:
+        """Generate roadmap using DeepSeek API."""
+        try:
+            import httpx
+            
+            headers = {
+                "Authorization": f"Bearer {self.deepseek_api_key}",
+                "Content-Type": "application/json"
+            }
+            
+            data = {
+                "model": "deepseek-chat",
+                "messages": [
+                    {"role": "user", "content": prompt}
+                ],
+                "temperature": 0.7,
+                "max_tokens": 2048
+            }
+            
+            with httpx.Client(timeout=60.0) as client:
+                response = client.post(
+                    f"{self.deepseek_base_url}/chat/completions",
+                    headers=headers,
+                    json=data
+                )
+                response.raise_for_status()
+                
+                result = response.json()
+                content = result["choices"][0]["message"]["content"]
+                
+                if not content or len(content.strip()) < 100:
+                    raise ValueError("DeepSeek returned insufficient content")
+                
+                logging.info(f"✅ Successfully generated roadmap with DeepSeek ({len(content)} chars)")
+                return content
+                
+        except Exception as e:
+            logging.error(f"❌ DeepSeek API error: {e}")
+            raise e
 
     def _get_fallback_roadmap(self, topic: str) -> str:
         """Generate a basic roadmap when API calls fail."""

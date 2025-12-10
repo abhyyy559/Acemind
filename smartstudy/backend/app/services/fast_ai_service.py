@@ -22,12 +22,19 @@ class FastAIService:
         self.ollama_base_url = getattr(settings, 'OLLAMA_BASE_URL', 'http://localhost:11434')
         self.ollama_model = getattr(settings, 'OLLAMA_MODEL', 'deepseek-coder-v2:latest')
         
-        # API priority (Ollama first - local and free!)
-        self.api_priority = ['ollama']
-        if self.openai_api_key:
-            self.api_priority.append('openai')
-        if self.deepseek_api_key:
+        # Smart API priority - DeepSeek first if available, then Ollama for local dev
+        self.api_priority = []
+        
+        # Priority 1: DeepSeek (if API key is available)
+        if self.deepseek_api_key and self.deepseek_api_key.strip():
             self.api_priority.append('deepseek')
+            
+        # Priority 2: Ollama (for local development)
+        self.api_priority.append('ollama')
+        
+        # Priority 3: OpenAI (if available)
+        if self.openai_api_key and self.openai_api_key.strip():
+            self.api_priority.append('openai')
         
         logger.info(f"FastAI initialized with APIs: {self.api_priority}")
     
